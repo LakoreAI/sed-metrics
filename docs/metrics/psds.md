@@ -1,5 +1,7 @@
 # PSDS — Polyphonic Sound Detection Score
 
+Specification identifier: `psds/1`.
+
 Status: **implemented** for the intersection-based DTC/GTC/CTTC criteria.
 Parity with `sed_scores_eval` 0.0.4 is tested, including per-class curves.
 
@@ -12,7 +14,7 @@ as the reference oracle; DCASE Task 4 PSDS1/PSDS2 profiles.
 ## 1. Name, status, input representation
 
 PSDS measures detection quality **independently of a chosen threshold** by
-sweeping over the score range and integrating the resulting precision/recall
+sweeping over the score range and integrating the resulting PSD-ROC
 envelope. It is an established metric; the specific parameter sets are branded
 as PSDS1 and PSDS2.
 
@@ -26,6 +28,10 @@ Inputs:
   are rejected (see Limitations).
 - Recording durations: required. They define the exposure in the eFPR and are
   validated to contain the events and the score grid.
+- Every recording must have one score track covering exactly `[0, duration]`,
+  and each track must contain every evaluated class. Partial coverage and
+  omitted tracks now raise an error; callers using previous versions must supply
+  complete tracks. No implicit values are inserted.
 - The scored classes and the referenced classes must be the **same set**, and
   every scored class needs at least one reference event.
 
@@ -85,9 +91,8 @@ and a detection can be "relevant" while contributing to several references.
   equal to τ belongs to the detection.
 - Every distinct score is an operating point, so ties are handled by evaluating
   the shared value once; a plateau of equal scores is one detection.
-- Comparisons round both sides to `time_decimals` (default 6) before `>=`, which
-  gives an effective tolerance of half a unit in the last kept decimal on the
-  **summed** intersection. Individual intersections and lengths are not rounded.
+- Comparisons round both sides to `time_decimals` (default 6) before `>=`.
+  Individual intersections and lengths are not rounded before summation.
 - The "no detection" operating point (all statistics zero) is always present as
   a synthetic `+inf` threshold.
 
@@ -154,18 +159,14 @@ length, not half of the reference.
   accounting, malformed tracks, configuration conflicts and boundedness.
 - Complexity: per class and clip, `U` distinct thresholds are scanned over `T`
   frames and `R` references, i.e. `O(U · T + U · T · R)` per class/clip, with
-  `U <= T`. This is the straightforward formulation; the reference
-  implementation's incremental variant is faster on long recordings, and this is
-  the main performance gap.
+  `U <= T`. This is a straightforward formulation. The reference implementation
+  uses an incremental method; relative performance has not been benchmarked.
 
 ## Limitations
 
 - Non-finite scores (`NaN`, `-inf`) are rejected. `sed_scores_eval` defines
   special semantics for both (NaN freezes a detection, `-inf` is a hard off);
   reproducing them is deliberately out of scope until a use case requires it.
-- No per-clip class-column equality requirement: a class may be scored in some
-  clips only. The reference requires identical columns all clips; reports that
-  rely on this difference are not comparable.
 - No CTTC on single-class datasets in the reference implementation (it crashes);
   here `alpha_ct > 0` with one class reduces to the mean over zero other classes,
   i.e. no cross-trigger term.

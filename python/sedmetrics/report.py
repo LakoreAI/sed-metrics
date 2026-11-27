@@ -29,6 +29,14 @@ __all__ = [
 EVENT_METRICS = ("event_f1", "segment_f1")
 METRICS = EVENT_METRICS + ("psds",)
 
+# Specification identifiers describe the implemented contracts; they are not
+# claims that upstream protocols have the same versioning scheme.
+METRIC_SPECIFICATIONS = {
+    "event_f1": "event_f1/1",
+    "segment_f1": "segment_f1/1",
+    "psds": "psds/1",
+}
+
 _TABLE_ALIASES = {
     "recording": ("recording", "recording_id", "filename", "clip"),
     "class": ("class", "class_id", "event_label", "label"),
@@ -136,12 +144,15 @@ def evaluate(
     encoded = dataset.encode(predictions)
     report: dict[str, Any] = {
         "sedmetrics_version": __version__,
+        "report_schema_version": 1,
         "dataset": {
             "name": dataset.name,
             "source": dataset.source,
             "n_recordings": dataset.n_recordings,
             "n_events": dataset.n_events,
             "n_classes": dataset.n_classes,
+            "class_names": dict(dataset.class_names),
+            "recording_names": dict(dataset.recording_names),
         },
         "predictions": {"n_events": len(encoded)},
         "metrics": {},
@@ -169,6 +180,7 @@ def evaluate(
         else:
             raise ValueError(f"unknown metric {name!r}; available metrics: {METRICS}")
         report["metrics"][name] = result.to_dict()
+        report["metrics"][name]["specification"] = METRIC_SPECIFICATIONS[name]
 
     return report
 

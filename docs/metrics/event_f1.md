@@ -1,7 +1,9 @@
 # Collar-based event precision, recall and F1
 
-Status: **implemented** (bootstrap). Established metric family; this
-implementation has **not** yet been checked for parity against `sed_eval`.
+Specification identifier: `event_f1/1`.
+
+Status: **implemented** (bootstrap). Established metric family; selected
+fixtures are compared against `sed_eval` 0.2.1 as described below.
 
 Source: Mesaros, Heittola and Virtanen, *Metrics for Polyphonic Sound Event
 Detection*, Applied Sciences 6(6):162, 2016, <https://doi.org/10.3390/app6060162>,

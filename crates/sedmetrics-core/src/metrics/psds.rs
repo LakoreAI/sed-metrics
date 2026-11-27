@@ -448,10 +448,10 @@ pub fn psds(
             }
         }
         let duration = durations[&track.recording_id];
-        if track.boundaries[0] < 0.0 || *track.boundaries.last().unwrap() > duration {
+        if track.boundaries[0] != 0.0 || *track.boundaries.last().unwrap() != duration {
             return Err(ValidationError::InvalidScoreTrack {
                 recording_id: track.recording_id,
-                reason: "frame boundaries outside the recording",
+                reason: "score boundaries must cover the entire recording from zero to duration",
             });
         }
         let expected = track.n_frames() * track.class_ids.len();
@@ -478,6 +478,22 @@ pub fn psds(
     let reference_classes: BTreeSet<u32> = references.iter().map(|event| event.class_id).collect();
     if score_classes != reference_classes {
         return Err(ValidationError::ClassVocabularyMismatch);
+    }
+    for recording_id in durations.keys() {
+        if !seen_recordings.contains(recording_id) {
+            return Err(ValidationError::InvalidScoreTrack {
+                recording_id: *recording_id,
+                reason: "missing score track",
+            });
+        }
+    }
+    for track in tracks {
+        if track.class_ids.iter().copied().collect::<BTreeSet<_>>() != score_classes {
+            return Err(ValidationError::InvalidScoreTrack {
+                recording_id: track.recording_id,
+                reason: "score track must contain every evaluated class",
+            });
+        }
     }
     let classes: Vec<u32> = score_classes.iter().copied().collect();
     let class_index: BTreeMap<u32, usize> = classes

@@ -85,4 +85,6 @@ jobs:
         # SEDMETRICS_RAW_DATA is intentionally unset: the URBAN-SED and
         # AudioSet samples are not in the repository, so the real-data parity
         # tests skip and only the fixture-based comparisons run.
-        run: python -m pytest tests/parity -q
+        run: |
+          python -c "import sed_eval.sound_event, sed_scores_eval.intersection_based, numpy, pandas"
+          python -m pytest tests/parity -q

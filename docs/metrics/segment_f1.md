@@ -1,5 +1,7 @@
 # Segment-based precision, recall, F1 and error rate
 
+Specification identifier: `segment_f1/1`.
+
 Status: **implemented**. Established metric family; parity with `sed_eval` 0.2.1
 is tested.
 

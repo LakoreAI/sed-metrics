@@ -67,8 +67,8 @@ def test_dataset_psds_resolves_names(tmp_path) -> None:
     result = dataset.psds(
         {
             "clip_a": (
-                [0.0, 1.0, 2.0, 3.0],
-                {"siren": [0.05, 0.9, 0.9]},
+                [0.0, 1.0, 2.0, 3.0, 10.0],
+                {"siren": [0.05, 0.9, 0.9, 0.05]},
             )
         },
         dtc_threshold=0.5,
@@ -117,7 +117,7 @@ def test_psds_rejects_malformed_scores() -> None:
         sm.psds.psds(references, wrong_length, recordings=recordings)
 
     outside = {0: ([0.0, 1.0, 2.0, 3.0, 5.0], {0: [0.1, 0.9, 0.1, 0.9]})}
-    with pytest.raises(sm.ValidationError, match="outside the recording"):
+    with pytest.raises(sm.ValidationError, match="cover the entire recording"):
         sm.psds.psds(references, outside, recordings=recordings)
 
 

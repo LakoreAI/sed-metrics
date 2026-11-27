@@ -11,8 +11,7 @@ the time at which a decision actually becomes available.
 
 ## Status
 
-This is an early bootstrap. Only the metric below is implemented; everything
-else in the roadmap is planned.
+This is an early bootstrap. The implemented and planned features are listed below.
 
 | Area | Status |
 | --- | --- |
@@ -20,12 +19,11 @@ else in the roadmap is planned.
 | Segment-based precision / recall / F1 with S/D/I error rate | Implemented — Rust core + Python bindings |
 | PSDS (intersection-based DTC/GTC/CTTC, PSDS1/PSDS2 profiles) | Implemented — Rust core + Python bindings |
 | Dataset adapters: URBAN-SED v2.0.0 (dir or `.tar.gz`), AudioSet strong parquet | Implemented — `pyarrow` optional, AudioSet only |
-| Parity with `sed_eval` 0.2.1 (event, segment) and `sed_scores_eval` 0.0.4 (PSDS) | Passing, including per-class PSDS curves |
+| Reference parity | Tested for selected fixtures against `sed_eval` 0.2.1 (event, segment) and `sed_scores_eval` 0.0.4 (PSDS), including per-class PSDS curves |
 | JSON evaluation report + `sedmetrics evaluate` CLI | Implemented |
 | Frame metrics on an arbitrary score grid, piPSDS / post-processing-independent evaluation | Not implemented |
 | Streaming / online metrics (deadline recall, AUDR, false alerts per hour) | Not implemented, protocol provisional |
 | Diagnostics, post-processing, soft-label metrics | Not implemented |
-| CLI | Not implemented |
 
 Correctness caveats that apply right now:
 
@@ -39,8 +37,8 @@ Correctness caveats that apply right now:
   event/segment metrics; PSDS needs score tracks and is available through the
   Python API only. DCASE score files and model checkpoints are not read, and
   there is no batch/streaming API.
-- No license has been chosen yet; do not redistribute until the maintainer
-  settles it.
+- Apache-2.0 is declared in the repository; the supplied project scope reserves
+  the license decision for the maintainer, so maintainer confirmation is pending.
 
 ## Install (from source)
 
@@ -54,6 +52,39 @@ pip install "sedmetrics[data]"    # optional: pyarrow, for AudioSet parquet
 ```
 
 ## Usage
+
+For a single metric, use the simple entry point:
+
+```python
+from sedmetrics import SEDMetrics
+
+result = SEDMetrics.eval(
+    references=[(0, 0, 0.0, 1.0)],
+    predictions=[(0, 0, 0.05, 1.0)],
+)
+print(result.f1, result.n_correct)
+```
+
+The default is collar-based event F1. Pass `metric="segment_f1"` and
+`recordings={0: 2.0}` for segment metrics, or `metric="psds"`, `scores=...`
+and `recordings=...` for PSDS. Metric-specific options can be passed as keyword
+arguments. A `Dataset` can be passed as `references` to use names and its
+recording durations. The lower-level APIs remain available:
+
+```python
+results = SEDMetrics.eval(
+    references=[(0, 0, 0.0, 1.0)],
+    predictions=[(0, 0, 0.05, 1.0)],
+    recordings={0: 2.0},
+    metrics=["event_f1", "segment_f1"],
+    metric_options={"event_f1": {"onset_collar": 0.1}},
+)
+print(results["event_f1"].f1, results["segment_f1"].f1)
+```
+
+`metrics` always returns a dictionary, even with one selection. The singular
+`metric` argument returns a single result. When combining event metrics with
+PSDS, supply both `predictions` and complete `scores`.
 
 ```python
 import sedmetrics as sm
@@ -106,12 +137,17 @@ sm.report.write_report(report, "results/run.json")
 PSDS from per-frame scores:
 
 ```python
-result = dataset.psds(
-    {"soundscape_test_1": (boundaries, {"siren": frame_scores})},
-    dtc_threshold=0.7, gtc_threshold=0.7, alpha_st=1.0,
+result = SEDMetrics.eval(
+    references=[(0, 0, 1.0, 2.0)],
+    metric="psds",
+    recordings={0: 3.0},
+    scores={0: ([0.0, 1.0, 2.0, 3.0], {0: [0.1, 0.9, 0.1]})},
 )
 print(result.psds, result.classes[0].tpr)
 ```
+
+Supply a complete track for every recording and every evaluated class; its
+boundaries must span the recording's full duration.
 
 DCASE PSDS1 is the default configuration; PSDS2 means
 `dtc_threshold=0.1, gtc_threshold=0.1, cttc_threshold=0.3, alpha_ct=0.5`.
@@ -155,7 +191,7 @@ covered by the Python tests.
 - `docs/metrics/segment_f1.md` — segment-based metric and S/D/I decomposition.
 - `docs/metrics/psds.md` — PSDS definition, criteria, profiles and parity.
 - `docs/adapters.md` — dataset formats, id assignment, duration rules.
-- `docs/streaming-protocol.md` — decided streaming evaluation contract.
+- `docs/streaming-protocol.md` — provisional streaming evaluation contract and unresolved censoring policy.
 - `docs/decisions/0001-baseline.md` — license, platforms, CI and metric order.
 
 ## Supported platforms

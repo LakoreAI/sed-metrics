@@ -1,6 +1,6 @@
 # Streaming evaluation protocol (decided baseline)
 
-Status: **protocol fixed, implementation not started.** The metric family is
+Status: **provisional, implementation not started.** The metric family is
 still provisional in the sense that independent validation has not been done; the
 rules below are the contract any implementation and any report must follow.
 
@@ -94,6 +94,13 @@ logs.
 - A reference whose eligibility window is not fully observed (it extends past the
   observation end) is **censored**: it is excluded from the fully observed
   cohort, counted separately, and never counted as a confirmed miss.
+- The interaction between censored references and matching is unresolved:
+  excluding them before assignment can count an alert attributable to a censored
+  event as false, while matching them first can consume an alert eligible for an
+  observed event. Neither alternative is adopted until a policy and adversarial
+  fixtures are specified. Exposure under early observation termination likewise
+  needs an explicit definition. Do not implement or claim this baseline fixed
+  until these choices are resolved.
 - A reference with a fully observed window and no matched alert is a miss.
 - Observation ends at the clip boundary; no tail time is added.
 

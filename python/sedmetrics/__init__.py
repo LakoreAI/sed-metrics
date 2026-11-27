@@ -22,6 +22,7 @@ from ._native import (
     ValidationError,
 )
 from .dataset import Dataset
+from .evaluator import SEDMetrics
 
 __all__ = [
     "ClassEventF1",
@@ -31,6 +32,7 @@ __all__ = [
     "EventF1Result",
     "PsdsResult",
     "SegmentResult",
+    "SEDMetrics",
     "ValidationError",
     "__version__",
     "adapters",

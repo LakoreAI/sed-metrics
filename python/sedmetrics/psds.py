@@ -51,6 +51,8 @@ def psds(
         covers ``[boundaries[i], boundaries[i+1])``. Scores must be finite and
         identical in length to the number of frames. Every scored class must
         have at least one reference event, and the class sets must match.
+        Each recording needs a track spanning zero to its duration with all
+        evaluated class columns, including recordings without references.
     recordings:
         ``{recording_id: duration_seconds}``; required, used for exposure and
         for the effective false-positive rate.

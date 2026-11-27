@@ -172,6 +172,34 @@ fn malformed_score_tracks_are_rejected() {
 }
 
 #[test]
+fn incomplete_score_coverage_is_rejected() {
+    let references = [reference(0, 0, 0.0, 1.0), reference(0, 1, 0.0, 1.0)];
+    let recordings = [
+        Recording {
+            recording_id: 0,
+            duration: 2.0,
+        },
+        Recording {
+            recording_id: 1,
+            duration: 2.0,
+        },
+    ];
+    let complete = track(0, vec![0, 1], vec![0.0, 2.0], vec![0.5, 0.5]);
+    let missing_recording = [complete.clone()];
+    assert!(psds(&references, &missing_recording, &recordings, &config()).is_err());
+    let missing_class = [
+        complete.clone(),
+        track(1, vec![0], vec![0.0, 2.0], vec![0.5]),
+    ];
+    assert!(psds(&references, &missing_class, &recordings, &config()).is_err());
+    let partial = [
+        complete,
+        track(1, vec![0, 1], vec![0.5, 2.0], vec![0.5, 0.5]),
+    ];
+    assert!(psds(&references, &partial, &recordings, &config()).is_err());
+}
+
+#[test]
 fn inconsistent_cross_trigger_configuration_is_rejected() {
     let mut missing_cttc = config();
     missing_cttc.alpha_ct = 0.5;

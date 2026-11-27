@@ -1,6 +1,8 @@
 # ADR 0001 — Project baseline: license, platforms, CI, metric order
 
-Status: accepted (2026-11-27), except where marked "reversible by the maintainer".
+Status: recorded (2026-11-27); the license requires maintainer confirmation,
+and the streaming censoring interaction remains unresolved as described in
+`docs/streaming-protocol.md`.
 
 ## Context
 
@@ -63,7 +65,8 @@ before implementation; the order is a dependency order, not a deadline.
 
 ### 5. Streaming protocol
 
-Chosen and written down in `docs/streaming-protocol.md`:
+Proposed and written down in `docs/streaming-protocol.md`; the interaction of
+censoring with matching and exposure remains open:
 
 - immutable CREATE alerts only; Update/Cancel/Close are validated, not credited;
 - eligibility window `[reference onset, reference onset + matching_window]`,

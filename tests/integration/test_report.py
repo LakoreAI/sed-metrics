@@ -36,11 +36,13 @@ def test_evaluate_returns_a_json_safe_report(tmp_path: Path) -> None:
     loaded = json.loads(payload)
 
     assert loaded["sedmetrics_version"] == sm.__version__
+    assert loaded["report_schema_version"] == 1
     assert loaded["dataset"]["name"] == "urban-sed"
     assert loaded["dataset"]["n_recordings"] == 2
     assert loaded["predictions"]["n_events"] == 3
     assert set(loaded["metrics"]) == {"event_f1", "segment_f1"}
     assert loaded["metrics"]["event_f1"]["n_correct"] == 3
+    assert loaded["metrics"]["event_f1"]["specification"] == "event_f1/1"
     assert loaded["metrics"]["segment_f1"]["f1"] == pytest.approx(1.0)
     assert loaded["metrics"]["event_f1"]["config"]["average"] == "micro"
 
@@ -186,9 +188,10 @@ def test_evaluate_includes_psds_when_scores_are_given(tmp_path: Path) -> None:
     dataset = make_dataset(tmp_path)
     scores = {
         "clip_a": (
-            [0.0, 1.0, 2.0, 3.0],
-            {"siren": [0.05, 0.9, 0.9], "dog_bark": [0.05, 0.05, 0.05]},
-        )
+            [0.0, 1.0, 2.0, 3.0, 10.0],
+            {"siren": [0.05, 0.9, 0.9, 0.05], "dog_bark": [0.05, 0.05, 0.05, 0.05]},
+        ),
+        "clip_b": ([0.0, 10.0], {"siren": [0.05], "dog_bark": [0.05]}),
     }
 
     result = report.evaluate(
