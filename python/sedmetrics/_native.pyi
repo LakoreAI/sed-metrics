@@ -36,7 +36,55 @@ class EventF1Result:
     def to_dict(self) -> dict[str, Any]: ...
     def __repr__(self) -> str: ...
 
+class ClassSegmentMetrics:
+    class_id: int
+    n_true_positive: int
+    n_false_positive: int
+    n_false_negative: int
+    n_reference: int
+    n_predicted: int
+    precision: float | None
+    recall: float | None
+    f1: float | None
+    def to_dict(self) -> dict[str, Any]: ...
+    def __repr__(self) -> str: ...
+
+class SegmentResult:
+    average: str
+    n_true_positive: int
+    n_false_positive: int
+    n_false_negative: int
+    n_reference: int
+    n_predicted: int
+    precision: float | None
+    recall: float | None
+    f1: float | None
+    n_substitutions: int
+    n_deletions: int
+    n_insertions: int
+    error_rate: float | None
+    substitution_rate: float | None
+    deletion_rate: float | None
+    insertion_rate: float | None
+    n_segments: int
+    n_classes: int
+    @property
+    def classes(self) -> list[ClassSegmentMetrics]: ...
+    @property
+    def config(self) -> dict[str, Any]: ...
+    def to_dict(self) -> dict[str, Any]: ...
+    def __repr__(self) -> str: ...
+
 class ValidationError(ValueError): ...
+
+def segment_f1(
+    references: Iterable[Any],
+    predictions: Iterable[Any],
+    *,
+    segment_length: float = 1.0,
+    average: str | None = None,
+    recordings: Mapping[int, float] | None = None,
+) -> SegmentResult: ...
 
 def event_f1(
     references: Iterable[Any],

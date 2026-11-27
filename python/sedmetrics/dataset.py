@@ -182,6 +182,21 @@ class Dataset:
             )
         return encoded
 
+    def segment_f1(self, predictions: Iterable[Any], **kwargs: Any):
+        """Segment-based metrics of ``predictions`` against this dataset.
+
+        Predictions may use class and recording names or ids. See
+        :func:`sedmetrics.segment.f1` for the keyword arguments.
+        """
+        from .segment import f1
+
+        return f1(
+            self.references,
+            self.encode(predictions),
+            recordings=self.durations,
+            **kwargs,
+        )
+
     def event_f1(self, predictions: Iterable[Any], **kwargs: Any):
         """Collar-based event F1 of ``predictions`` against this dataset.
 

@@ -17,6 +17,9 @@ classifiers = [
     "Topic :: Scientific/Engineering",
 ]
 
+[project.scripts]
+sedmetrics = "sedmetrics.cli:main"
+
 [project.optional-dependencies]
 test = ["pytest>=8"]
 # Reference oracles for parity tests. Never runtime dependencies of the core.

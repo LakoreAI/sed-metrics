@@ -17,23 +17,25 @@ else in the roadmap is planned.
 | Area | Status |
 | --- | --- |
 | Collar-based event precision / recall / F1 (micro, macro, per class, with counts and mean localization error) | Implemented — Rust core + Python bindings |
+| Segment-based precision / recall / F1 with S/D/I error rate | Implemented — Rust core + Python bindings |
 | Dataset adapters: URBAN-SED v2.0.0 (dir or `.tar.gz`), AudioSet strong parquet | Implemented — `pyarrow` optional, AudioSet only |
-| Parity with `sed_eval` 0.2.1 event-based metrics | Passing on fixtures and sampled URBAN-SED / AudioSet data |
-| Frame metrics, segment metrics, PSDS / intersection metrics, threshold sweeps | Not implemented |
+| Parity with `sed_eval` 0.2.1 (event and segment) | Passing on fixtures and sampled URBAN-SED / AudioSet data |
+| JSON evaluation report + `sedmetrics evaluate` CLI | Implemented |
+| Frame metrics on score grids, PSDS / intersection metrics, threshold sweeps | Not implemented |
 | Streaming / online metrics (deadline recall, AUDR, false alerts per hour) | Not implemented, protocol provisional |
 | Diagnostics, post-processing, soft-label metrics | Not implemented |
 | CLI | Not implemented |
 
 Correctness caveats that apply right now:
 
-- Event F1 parity is verified against `sed_eval` 0.2.1 only. Parity against
-  `psds_eval`, `sed_scores_eval` and scikit-learn is not applicable yet because
-  those metric families are not implemented.
-- Parity runs use synthetic predictions derived from references, on 120
-  URBAN-SED test clips and 60 AudioSet strong clips. They are not a benchmark
-  of any system.
-- The Python API is a single metric plus dataset loaders; there is no batch API,
-  no `Evaluator` class, no DCASE TSV adapter and no CLI.
+- Event and segment parity is verified against `sed_eval` 0.2.1 only. Parity
+  against `psds_eval`, `sed_scores_eval` and scikit-learn is not applicable yet
+  because those metric families are not implemented.
+- Parity runs use synthetic predictions derived from references, on sampled
+  URBAN-SED test clips and AudioSet strong clips. They are not a benchmark of
+  any system.
+- `sedmetrics evaluate` reads predictions from a TSV/CSV table; it does not read
+  DCASE score files or model checkpoints, and there is no batch/streaming API.
 - No license has been chosen yet; do not redistribute until the maintainer
   settles it.
 
@@ -84,6 +86,20 @@ result = dataset.event_f1(
 
 See `docs/adapters.md` for dataset layouts, id assignment and duration rules.
 
+Segment-based metrics and a reproducible JSON report:
+
+```python
+dataset = sm.adapters.load_urban_sed("data/raw/URBAN-SED_v2.0.0.tar.gz", split="test")
+
+print(dataset.segment_f1(predictions, segment_length=1.0).error_rate)
+
+report = sm.report.evaluate(dataset, predictions, metrics=["event_f1", "segment_f1"])
+sm.report.write_report(report, "results/run.json")
+
+# or from the command line, with predictions in a TSV/CSV table
+# sedmetrics evaluate --dataset urban-sed --root data/raw --predictions preds.tsv --out results/run.json
+```
+
 ## Development
 
 ```bash
@@ -106,6 +122,7 @@ covered by the Python tests.
 - `docs/metrics/event_f1.md` — specification of the implemented metric
   (definition, matching policy, aggregation, undefined values, defaults,
   hand-computed example, parity evidence, limitations).
+- `docs/metrics/segment_f1.md` — segment-based metric and S/D/I decomposition.
 - `docs/adapters.md` — dataset formats, id assignment, duration rules.
 
 ## License

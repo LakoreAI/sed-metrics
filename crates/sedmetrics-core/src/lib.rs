@@ -13,5 +13,6 @@ pub mod validation;
 
 pub use matching::{CollarConfig, is_eligible, maximum_matching};
 pub use metrics::event::{Averaging, ClassEventF1, EventF1Config, EventF1Result, event_f1};
+pub use metrics::segment::{ClassSegmentMetrics, SegmentConfig, SegmentResult, segment_metrics};
 pub use types::{Event, PredictedEvent, Recording};
 pub use validation::ValidationError;

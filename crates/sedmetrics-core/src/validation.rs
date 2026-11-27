@@ -82,6 +82,13 @@ pub enum ValidationError {
         /// The rejected value.
         value: f64,
     },
+    /// A metric parameter was not usable.
+    InvalidParameter {
+        /// Parameter name.
+        field: &'static str,
+        /// The rejected value.
+        value: f64,
+    },
 }
 
 impl fmt::Display for ValidationError {
@@ -141,6 +148,9 @@ impl fmt::Display for ValidationError {
             }
             Self::InvalidCollar { field, value } => {
                 write!(f, "{field} must be finite and nonnegative, got {value}")
+            }
+            Self::InvalidParameter { field, value } => {
+                write!(f, "{field} must be finite and positive, got {value}")
             }
         }
     }
