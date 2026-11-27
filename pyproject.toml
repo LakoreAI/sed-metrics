@@ -36,6 +36,7 @@ parity = [
     "sed_scores_eval==0.0.4",
     "numpy",
     "pandas<3",
+    "scikit-learn==1.9.1",
 ]
 # Dataset adapters for AudioSet strong parquet.
 data = ["pyarrow>=15"]

@@ -21,7 +21,8 @@ This is an early bootstrap. The implemented and planned features are listed belo
 | Dataset adapters: URBAN-SED v2.0.0 (dir or `.tar.gz`), AudioSet strong parquet | Implemented — `pyarrow` optional, AudioSet only |
 | Reference parity | Tested for selected fixtures against `sed_eval` 0.2.1 (event, segment) and `sed_scores_eval` 0.0.4 (PSDS), including per-class PSDS curves |
 | JSON evaluation report + `sedmetrics evaluate` CLI | Implemented |
-| Frame metrics on an arbitrary score grid, piPSDS / post-processing-independent evaluation | Not implemented |
+| Binary frame precision/recall/F1, AP and AUROC | Implemented for one pre-aligned class, with frame or duration weighting |
+| piPSDS / post-processing-independent evaluation | Not implemented |
 | Streaming / online metrics (deadline recall, AUDR, false alerts per hour) | Not implemented, protocol provisional |
 | Diagnostics, post-processing, soft-label metrics | Not implemented |
 
@@ -152,6 +153,23 @@ boundaries must span the recording's full duration.
 DCASE PSDS1 is the default configuration; PSDS2 means
 `dtc_threshold=0.1, gtc_threshold=0.1, cttc_threshold=0.3, alpha_ct=0.5`.
 `alpha_st` defaults to 1.0 here, unlike `sed_scores_eval` (0.0).
+
+For explicitly aligned binary frame labels and scores, use:
+
+```python
+result = SEDMetrics.eval(
+    references=[True, False, True], scores=[0.9, 0.8, 0.1],
+    mode="frame", threshold=0.5,
+    boundaries=[0.0, 0.2, 0.5, 1.0], weighting="duration",
+)
+print(result["f1"], result["average_precision"], result["auroc"])
+```
+
+Frame mode returns all supported frame metrics for one class with labels already aligned to the score grid. It does
+not infer labels from event intervals or aggregate classes; see
+`docs/metrics/frame_binary.md` for the contract.
+Pass `metrics=["f1", "auroc"]` to select frame metrics; counts and configuration
+are always included.
 
 ## Development
 

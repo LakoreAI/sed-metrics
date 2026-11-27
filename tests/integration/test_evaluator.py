@@ -57,3 +57,30 @@ def test_metrics_list_validation():
         SEDMetrics.eval([], [], metric="event_f1", metrics=["event_f1"])
     with pytest.raises(ValueError, match="unselected"):
         SEDMetrics.eval([], [], metrics=["event_f1"], metric_options={"psds": {}})
+
+
+def test_frame_mode_with_duration_weighting():
+    result = SEDMetrics.eval(
+        references=[True, False, True], scores=[0.9, 0.8, 0.1],
+        mode="frame", threshold=0.5, boundaries=[0.0, 1.0, 3.0, 6.0],
+        weighting="duration",
+    )
+    assert (result["tp"], result["fp"], result["fn"]) == (1, 2, 3)
+    assert result["f1"] == pytest.approx(2 / 7)
+
+
+def test_frame_mode_rejects_incompatible_inputs():
+    with pytest.raises(ValueError, match="mode must"):
+        SEDMetrics.eval([], [], mode="unknown")
+    with pytest.raises(ValueError, match="requires a sequence"):
+        SEDMetrics.eval([True], mode="frame", threshold=0.5)
+    with pytest.raises(ValueError, match="unknown frame metric"):
+        SEDMetrics.eval([True], mode="frame", scores=[0.9], threshold=0.5, metrics=["psds"])
+
+
+def test_frame_mode_selects_metrics_and_keeps_counts():
+    result = SEDMetrics.eval([True, False], mode="frame", scores=[0.9, 0.3],
+                             threshold=0.5, metrics=["f1", "auroc"])
+    assert result["f1"] == result["auroc"] == 1.0
+    assert result["tp"] == result["tn"] == 1.0
+    assert "precision" not in result

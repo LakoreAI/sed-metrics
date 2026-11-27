@@ -11,7 +11,7 @@ try:
 except PackageNotFoundError:  # running from a source tree without installation
     __version__ = "0.0.0"
 
-from . import adapters, event, psds, report, segment
+from . import adapters, event, frame, psds, report, segment
 from ._native import (
     ClassEventF1,
     ClassPsds,
@@ -37,6 +37,7 @@ __all__ = [
     "__version__",
     "adapters",
     "event",
+    "frame",
     "psds",
     "report",
     "segment",

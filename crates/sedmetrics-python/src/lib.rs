@@ -917,5 +917,29 @@ fn _native(module: &Bound<'_, PyModule>) -> PyResult<()> {
     module.add_function(wrap_pyfunction!(event_f1, module)?)?;
     module.add_function(wrap_pyfunction!(segment_f1, module)?)?;
     module.add_function(wrap_pyfunction!(psds, module)?)?;
+    module.add_function(wrap_pyfunction!(frame_binary, module)?)?;
     Ok(())
+}
+
+#[pyfunction]
+fn frame_binary(
+    py: Python<'_>,
+    labels: Vec<bool>,
+    scores: Vec<f64>,
+    weights: Vec<f64>,
+    threshold: f64,
+) -> PyResult<Py<PyDict>> {
+    let result = sedmetrics_core::frame_metrics(&labels, &scores, &weights, threshold)
+        .map_err(ValidationError::new_err)?;
+    let out = PyDict::new(py);
+    out.set_item("tp", result.tp)?;
+    out.set_item("fp", result.fp)?;
+    out.set_item("fn", result.fn_)?;
+    out.set_item("tn", result.tn)?;
+    out.set_item("precision", result.precision)?;
+    out.set_item("recall", result.recall)?;
+    out.set_item("f1", result.f1)?;
+    out.set_item("average_precision", result.average_precision)?;
+    out.set_item("auroc", result.auroc)?;
+    Ok(out.into())
 }
