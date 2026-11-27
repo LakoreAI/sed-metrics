@@ -75,7 +75,44 @@ class SegmentResult:
     def to_dict(self) -> dict[str, Any]: ...
     def __repr__(self) -> str: ...
 
+class ClassPsds:
+    class_id: int
+    n_reference: int
+    reference_duration: float
+    psds: float
+    efpr: list[float]
+    tpr: list[float]
+    def to_dict(self) -> dict[str, Any]: ...
+    def __repr__(self) -> str: ...
+
+class PsdsResult:
+    psds: float
+    dataset_duration: float
+    efpr: list[float]
+    tpr: list[float]
+    @property
+    def classes(self) -> list[ClassPsds]: ...
+    @property
+    def config(self) -> dict[str, Any]: ...
+    def to_dict(self) -> dict[str, Any]: ...
+    def __repr__(self) -> str: ...
+
 class ValidationError(ValueError): ...
+
+def psds(
+    tracks: list[tuple[int, list[int], list[float], list[float]]],
+    references: Iterable[Any],
+    recordings: Mapping[int, float],
+    *,
+    dtc_threshold: float = 0.7,
+    gtc_threshold: float = 0.7,
+    cttc_threshold: float | None = None,
+    alpha_ct: float = 0.0,
+    alpha_st: float = 1.0,
+    max_efpr: float = 100.0,
+    time_decimals: int = 6,
+    unit: str = "hour",
+) -> PsdsResult: ...
 
 def segment_f1(
     references: Iterable[Any],

@@ -89,6 +89,27 @@ pub enum ValidationError {
         /// The rejected value.
         value: f64,
     },
+    /// A score track is malformed.
+    InvalidScoreTrack {
+        /// Recording of the offending track.
+        recording_id: u32,
+        /// What is wrong.
+        reason: &'static str,
+    },
+    /// Two score tracks carry the same recording id.
+    DuplicateScoreTrack {
+        /// The duplicated recording id.
+        recording_id: u32,
+    },
+    /// The scored classes and the referenced classes are not the same set.
+    ClassVocabularyMismatch,
+    /// PSDS needs at least one reference event per scored class.
+    ClassWithoutReferences {
+        /// The class without references.
+        class_id: u32,
+    },
+    /// `alpha_ct` and `cttc_threshold` disagree about cross-triggers.
+    InconsistentPsdsConfig,
 }
 
 impl fmt::Display for ValidationError {
@@ -152,6 +173,25 @@ impl fmt::Display for ValidationError {
             Self::InvalidParameter { field, value } => {
                 write!(f, "{field} must be finite and positive, got {value}")
             }
+            Self::InvalidScoreTrack {
+                recording_id,
+                reason,
+            } => write!(f, "score track for recording {recording_id}: {reason}"),
+            Self::DuplicateScoreTrack { recording_id } => {
+                write!(f, "several score tracks for recording {recording_id}")
+            }
+            Self::ClassVocabularyMismatch => write!(
+                f,
+                "the scored classes and the reference classes must be the same set"
+            ),
+            Self::ClassWithoutReferences { class_id } => write!(
+                f,
+                "class {class_id} has no reference events, so its recall is undefined"
+            ),
+            Self::InconsistentPsdsConfig => write!(
+                f,
+                "cttc_threshold must be set if and only if alpha_ct is positive"
+            ),
         }
     }
 }

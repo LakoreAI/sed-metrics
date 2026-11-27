@@ -66,7 +66,7 @@ def test_evaluate_forwards_metric_options(tmp_path: Path) -> None:
 def test_unknown_metric_is_rejected(tmp_path: Path) -> None:
     dataset = make_dataset(tmp_path)
     with pytest.raises(ValueError, match="unknown metric"):
-        report.evaluate(dataset, [], metrics=["psds"])
+        report.evaluate(dataset, [], metrics=["psds_v2"])
 
 
 def test_unknown_class_in_predictions_is_rejected(tmp_path: Path) -> None:
@@ -180,3 +180,37 @@ def test_cli_prints_to_stdout(tmp_path: Path, capsys) -> None:
                  "--predictions", str(predictions)]) == 0
     payload = json.loads(capsys.readouterr().out)
     assert payload["metrics"]["event_f1"]["n_correct"] == 1
+
+
+def test_evaluate_includes_psds_when_scores_are_given(tmp_path: Path) -> None:
+    dataset = make_dataset(tmp_path)
+    scores = {
+        "clip_a": (
+            [0.0, 1.0, 2.0, 3.0],
+            {"siren": [0.05, 0.9, 0.9], "dog_bark": [0.05, 0.05, 0.05]},
+        )
+    }
+
+    result = report.evaluate(
+        dataset,
+        [],
+        scores=scores,
+        metrics=["psds"],
+        psds_kwargs={
+            "dtc_threshold": 0.5,
+            "gtc_threshold": 0.5,
+            "alpha_st": 0.0,
+            "unit": "second",
+            "max_efpr": 1.0,
+        },
+    )
+
+    payload = json.dumps(result, allow_nan=False)
+    assert json.loads(payload)["metrics"]["psds"]["psds"] > 0.0
+    assert json.loads(payload)["metrics"]["psds"]["config"]["unit"] == "second"
+
+
+def test_psds_metric_requires_scores(tmp_path: Path) -> None:
+    dataset = make_dataset(tmp_path)
+    with pytest.raises(ValueError, match="requires per-frame scores"):
+        report.evaluate(dataset, [], metrics=["psds"])

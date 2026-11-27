@@ -182,6 +182,29 @@ class Dataset:
             )
         return encoded
 
+    def psds(self, scores: Mapping[Any, Any], **kwargs: Any):
+        """PSDS of per-frame ``scores`` against this dataset.
+
+        ``scores`` maps a recording name or id to ``(boundaries, {class:
+        per_frame_scores})`` where classes may be names or ids. See
+        :func:`sedmetrics.psds.psds` for the keyword arguments.
+        """
+        from .psds import psds
+
+        resolved: dict[int, tuple[Any, dict[int, Any]]] = {}
+        for recording, payload in scores.items():
+            boundaries, columns = payload
+            resolved[self.recording_id(recording)] = (
+                boundaries,
+                {self.class_id(name): series for name, series in columns.items()},
+            )
+        return psds(
+            self.references,
+            resolved,
+            recordings=self.durations,
+            **kwargs,
+        )
+
     def segment_f1(self, predictions: Iterable[Any], **kwargs: Any):
         """Segment-based metrics of ``predictions`` against this dataset.
 

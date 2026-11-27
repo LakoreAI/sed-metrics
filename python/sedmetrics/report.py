@@ -18,6 +18,7 @@ from . import __version__
 from .dataset import Dataset
 
 __all__ = [
+    "EVENT_METRICS",
     "METRICS",
     "evaluate",
     "evaluate_file",
@@ -25,7 +26,8 @@ __all__ = [
     "write_report",
 ]
 
-METRICS = ("event_f1", "segment_f1")
+EVENT_METRICS = ("event_f1", "segment_f1")
+METRICS = EVENT_METRICS + ("psds",)
 
 _TABLE_ALIASES = {
     "recording": ("recording", "recording_id", "filename", "clip"),
@@ -97,9 +99,11 @@ def evaluate(
     dataset: Dataset,
     predictions: Iterable[Any],
     *,
-    metrics: Iterable[str] = METRICS,
+    scores: Mapping[Any, Any] | None = None,
+    metrics: Iterable[str] = EVENT_METRICS,
     event_f1_kwargs: Mapping[str, Any] | None = None,
     segment_f1_kwargs: Mapping[str, Any] | None = None,
+    psds_kwargs: Mapping[str, Any] | None = None,
 ) -> dict[str, Any]:
     """Evaluate ``predictions`` and return a JSON-serialisable report.
 
@@ -109,11 +113,15 @@ def evaluate(
         Loaded reference data.
     predictions:
         Events using recording and class names or ids; unknown names raise.
+    scores:
+        Per-frame score tracks for ``"psds"``, in the form accepted by
+        :func:`sedmetrics.psds.psds` (names or ids). Required only for PSDS.
     metrics:
-        Subset of ``METRICS`` (``"event_f1"``, ``"segment_f1"``).
-    event_f1_kwargs, segment_f1_kwargs:
+        Subset of ``METRICS``: ``"event_f1"``, ``"segment_f1"`` and ``"psds"``.
+    event_f1_kwargs, segment_f1_kwargs, psds_kwargs:
         Extra keyword arguments forwarded to the metric, for example
-        ``{"onset_collar": 0.2}`` or ``{"segment_length": 0.5}``.
+        ``{"onset_collar": 0.2}``, ``{"segment_length": 0.5}`` or
+        ``{"dtc_threshold": 0.7}``.
 
     Returns
     -------
@@ -154,6 +162,10 @@ def evaluate(
                 recordings=dataset.durations,
                 **dict(segment_f1_kwargs or {}),
             )
+        elif name == "psds":
+            if scores is None:
+                raise ValueError("the 'psds' metric requires per-frame scores")
+            result = dataset.psds(scores, **dict(psds_kwargs or {}))
         else:
             raise ValueError(f"unknown metric {name!r}; available metrics: {METRICS}")
         report["metrics"][name] = result.to_dict()
@@ -166,7 +178,10 @@ def evaluate_file(
     predictions_path: str | Path,
     **kwargs: Any,
 ) -> dict[str, Any]:
-    """Read predictions from a TSV/CSV file and evaluate them."""
+    """Read predictions from a TSV/CSV file and evaluate them.
+
+    Score-based metrics still need ``scores`` passed explicitly.
+    """
     return evaluate(dataset, read_event_table(predictions_path), **kwargs)
 
 

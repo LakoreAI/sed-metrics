@@ -56,8 +56,9 @@ def build_parser() -> argparse.ArgumentParser:
     evaluate.add_argument(
         "--metrics",
         nargs="+",
-        default=list(report.METRICS),
-        choices=list(report.METRICS),
+        default=list(report.EVENT_METRICS),
+        choices=list(report.EVENT_METRICS),
+        help="event/segment metrics; PSDS needs score tracks and is Python-API only",
     )
     evaluate.add_argument(
         "--out",

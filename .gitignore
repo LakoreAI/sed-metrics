@@ -1,6 +1,7 @@
 /target
 /dist
 /.venv
+/.venv-oracle
 __pycache__/
 *.py[cod]
 *.so

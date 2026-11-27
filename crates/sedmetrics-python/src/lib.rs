@@ -11,9 +11,12 @@ use pyo3::exceptions::PyValueError;
 use pyo3::prelude::*;
 use pyo3::types::{PyDict, PyList};
 
+type ScoreTrackInput = (u32, Vec<u32>, Vec<f64>, Vec<f64>);
+
 use sedmetrics_core::{
     Averaging, ClassEventF1, ClassSegmentMetrics, CollarConfig, Event, EventF1Config,
-    EventF1Result, Recording, SegmentConfig, SegmentResult, ValidationError as CoreValidationError,
+    EventF1Result, PsdsConfig, Recording, ScoreTrack, SegmentConfig, SegmentResult, TimeUnit,
+    ValidationError as CoreValidationError,
 };
 
 create_exception!(
@@ -594,6 +597,242 @@ fn segment_f1(
     Ok(convert_segment_result(result))
 }
 
+/// Per-class PSDS with its operating curve.
+#[pyclass(name = "ClassPsds", module = "sedmetrics._native", frozen)]
+#[derive(Clone)]
+pub struct ClassPsdsPy {
+    /// Class identifier.
+    #[pyo3(get)]
+    pub class_id: u32,
+    /// Number of reference events for the class.
+    #[pyo3(get)]
+    pub n_reference: u64,
+    /// Total reference duration of the class, in seconds.
+    #[pyo3(get)]
+    pub reference_duration: f64,
+    /// Area under this class's PSD-ROC divided by `max_efpr`.
+    #[pyo3(get)]
+    pub psds: f64,
+    /// Effective false-positive rates of the class envelope.
+    #[pyo3(get)]
+    pub efpr: Vec<f64>,
+    /// True-positive rates at `efpr`.
+    #[pyo3(get)]
+    pub tpr: Vec<f64>,
+}
+
+#[pymethods]
+impl ClassPsdsPy {
+    /// Return the class result as a plain dict.
+    fn to_dict(&self, py: Python<'_>) -> PyResult<Py<PyDict>> {
+        let dict = PyDict::new(py);
+        dict.set_item("class_id", self.class_id)?;
+        dict.set_item("n_reference", self.n_reference)?;
+        dict.set_item("reference_duration", self.reference_duration)?;
+        dict.set_item("psds", self.psds)?;
+        dict.set_item("efpr", self.efpr.clone())?;
+        dict.set_item("tpr", self.tpr.clone())?;
+        Ok(dict.into())
+    }
+
+    fn __repr__(&self) -> String {
+        format!(
+            "ClassPsds(class_id={}, n_reference={}, psds={})",
+            self.class_id, self.n_reference, self.psds
+        )
+    }
+}
+
+/// PSDS result with the macro curve and per-class curves.
+#[pyclass(name = "PsdsResult", module = "sedmetrics._native", frozen)]
+pub struct PsdsResultPy {
+    /// Macro PSDS after the `alpha_st` penalty.
+    #[pyo3(get)]
+    pub psds: f64,
+    /// Total audio duration of the evaluated recordings, in seconds.
+    #[pyo3(get)]
+    pub dataset_duration: f64,
+    /// Effective false-positive rates of the macro curve.
+    #[pyo3(get)]
+    pub efpr: Vec<f64>,
+    /// Effective true-positive rates of the macro curve.
+    #[pyo3(get)]
+    pub tpr: Vec<f64>,
+    /// Per-class results, sorted by class id.
+    pub classes: Vec<ClassPsdsPy>,
+    /// Configuration used.
+    pub config: PsdsConfig,
+}
+
+#[pymethods]
+impl PsdsResultPy {
+    /// Per-class results, sorted by class id.
+    #[getter]
+    fn classes(&self) -> Vec<ClassPsdsPy> {
+        self.classes.clone()
+    }
+
+    /// Configuration used for the computation.
+    #[getter]
+    fn config(&self, py: Python<'_>) -> PyResult<Py<PyDict>> {
+        let dict = PyDict::new(py);
+        dict.set_item("dtc_threshold", self.config.dtc_threshold)?;
+        dict.set_item("gtc_threshold", self.config.gtc_threshold)?;
+        dict.set_item("cttc_threshold", self.config.cttc_threshold)?;
+        dict.set_item("alpha_ct", self.config.alpha_ct)?;
+        dict.set_item("alpha_st", self.config.alpha_st)?;
+        dict.set_item("max_efpr", self.config.max_efpr)?;
+        dict.set_item("time_decimals", self.config.time_decimals)?;
+        dict.set_item("unit", time_unit_name(self.config.unit))?;
+        Ok(dict.into())
+    }
+
+    /// Return the result as a plain dict.
+    fn to_dict(&self, py: Python<'_>) -> PyResult<Py<PyDict>> {
+        let dict = PyDict::new(py);
+        dict.set_item("psds", self.psds)?;
+        dict.set_item("dataset_duration", self.dataset_duration)?;
+        dict.set_item("efpr", self.efpr.clone())?;
+        dict.set_item("tpr", self.tpr.clone())?;
+        dict.set_item("config", self.config(py)?)?;
+
+        let classes = PyList::empty(py);
+        for class in &self.classes {
+            classes.append(class.to_dict(py)?)?;
+        }
+        dict.set_item("classes", classes)?;
+        Ok(dict.into())
+    }
+
+    fn __repr__(&self) -> String {
+        format!(
+            "PsdsResult(psds={}, n_classes={})",
+            self.psds,
+            self.classes.len()
+        )
+    }
+}
+
+fn time_unit_name(unit: TimeUnit) -> &'static str {
+    match unit {
+        TimeUnit::Second => "second",
+        TimeUnit::Minute => "minute",
+        TimeUnit::Hour => "hour",
+    }
+}
+
+fn parse_time_unit(unit: &str) -> PyResult<TimeUnit> {
+    match unit {
+        "second" => Ok(TimeUnit::Second),
+        "minute" => Ok(TimeUnit::Minute),
+        "hour" => Ok(TimeUnit::Hour),
+        other => Err(PyValueError::new_err(format!(
+            "unit must be 'second', 'minute' or 'hour', got {other:?}"
+        ))),
+    }
+}
+
+/// Compute PSDS with intersection-based DTC/GTC/CTTC criteria.
+///
+/// Parameters
+/// ----------
+/// tracks:
+///     ``[(recording_id, [class_id, ...], boundaries, scores), ...]`` where
+///     ``boundaries`` has one more entry than there are frames and ``scores``
+///     is row-major ``[frames, len(class_ids)]``.
+/// references:
+///     Events as in :func:`event_f1`. Every scored class must have at least one
+///     reference event, and the class sets must match exactly.
+/// recordings:
+///     ``{recording_id: duration_seconds}``; required for exposure.
+/// dtc_threshold, gtc_threshold:
+///     Intersection criteria (DCASE PSDS1: 0.7 / 0.7, PSDS2: 0.1 / 0.1).
+/// cttc_threshold:
+///     Cross-trigger criterion; required iff ``alpha_ct > 0``.
+/// alpha_ct, alpha_st:
+///     Cross-trigger weight (PSDS1: 0, PSDS2: 0.5) and standard-deviation
+///     penalty (DCASE: 1.0).
+/// max_efpr:
+///     Upper limit of the effective false-positive rate (DCASE: 100).
+/// time_decimals:
+///     Rounding of criterion sums (reference: 6).
+/// unit:
+///     ``"second"``, ``"minute"`` or ``"hour"``.
+#[pyfunction]
+#[pyo3(signature = (
+    tracks,
+    references,
+    recordings,
+    *,
+    dtc_threshold=0.7,
+    gtc_threshold=0.7,
+    cttc_threshold=None,
+    alpha_ct=0.0,
+    alpha_st=1.0,
+    max_efpr=100.0,
+    time_decimals=6,
+    unit="hour",
+))]
+#[allow(clippy::too_many_arguments)]
+fn psds(
+    tracks: Vec<ScoreTrackInput>,
+    references: &Bound<'_, PyAny>,
+    recordings: HashMap<u32, f64>,
+    dtc_threshold: f64,
+    gtc_threshold: f64,
+    cttc_threshold: Option<f64>,
+    alpha_ct: f64,
+    alpha_st: f64,
+    max_efpr: f64,
+    time_decimals: u32,
+    unit: &str,
+) -> PyResult<PsdsResultPy> {
+    let references = extract_events(references, "references")?;
+    let recordings = extract_recordings(Some(recordings)).expect("recordings supplied");
+    let tracks: Vec<ScoreTrack> = tracks
+        .into_iter()
+        .map(|(recording_id, class_ids, boundaries, scores)| ScoreTrack {
+            recording_id,
+            class_ids,
+            boundaries,
+            scores: scores.into_iter().map(|score| score as f32).collect(),
+        })
+        .collect();
+    let config = PsdsConfig {
+        dtc_threshold,
+        gtc_threshold,
+        cttc_threshold,
+        alpha_ct,
+        alpha_st,
+        max_efpr,
+        time_decimals,
+        unit: parse_time_unit(unit)?,
+    };
+
+    let result =
+        sedmetrics_core::psds(&references, &tracks, &recordings, &config).map_err(to_py_err)?;
+
+    Ok(PsdsResultPy {
+        psds: result.psds,
+        dataset_duration: result.dataset_duration,
+        efpr: result.efpr,
+        tpr: result.tpr,
+        classes: result
+            .classes
+            .into_iter()
+            .map(|class| ClassPsdsPy {
+                class_id: class.class_id,
+                n_reference: class.n_reference,
+                reference_duration: class.reference_duration,
+                psds: class.psds,
+                efpr: class.efpr,
+                tpr: class.tpr,
+            })
+            .collect(),
+        config: result.config,
+    })
+}
+
 /// Evaluate collar-based event precision, recall and F1.
 ///
 /// Parameters
@@ -672,8 +911,11 @@ fn _native(module: &Bound<'_, PyModule>) -> PyResult<()> {
     module.add_class::<EventF1ResultPy>()?;
     module.add_class::<ClassSegmentMetricsPy>()?;
     module.add_class::<SegmentResultPy>()?;
+    module.add_class::<ClassPsdsPy>()?;
+    module.add_class::<PsdsResultPy>()?;
     module.add("ValidationError", module.py().get_type::<ValidationError>())?;
     module.add_function(wrap_pyfunction!(event_f1, module)?)?;
     module.add_function(wrap_pyfunction!(segment_f1, module)?)?;
+    module.add_function(wrap_pyfunction!(psds, module)?)?;
     Ok(())
 }

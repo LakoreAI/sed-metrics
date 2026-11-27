@@ -11,11 +11,13 @@ try:
 except PackageNotFoundError:  # running from a source tree without installation
     __version__ = "0.0.0"
 
-from . import adapters, event, report, segment
+from . import adapters, event, psds, report, segment
 from ._native import (
     ClassEventF1,
+    ClassPsds,
     ClassSegmentMetrics,
     EventF1Result,
+    PsdsResult,
     SegmentResult,
     ValidationError,
 )
@@ -23,14 +25,17 @@ from .dataset import Dataset
 
 __all__ = [
     "ClassEventF1",
+    "ClassPsds",
     "ClassSegmentMetrics",
     "Dataset",
     "EventF1Result",
+    "PsdsResult",
     "SegmentResult",
     "ValidationError",
     "__version__",
     "adapters",
     "event",
+    "psds",
     "report",
     "segment",
 ]
