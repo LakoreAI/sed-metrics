@@ -1,3 +1,7 @@
+---
+description: Frame classification precision, recall, F1, average precision and AUROC.
+---
+
 # Binary frame classification, version 1
 
 Status: established binary classification definitions on an explicitly aligned

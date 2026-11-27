@@ -1,3 +1,7 @@
+---
+description: Map reference sound events to frame intervals and calculate classwise metrics.
+---
+
 # Frame evaluation from events, version 1
 
 Uses the binary definitions and undefined values in [frame_binary.md](frame_binary.md).

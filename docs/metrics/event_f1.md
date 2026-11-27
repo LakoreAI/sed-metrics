@@ -1,3 +1,7 @@
+---
+description: Collar-based sound event detection precision, recall, F1, matching and aggregation.
+---
+
 # Collar-based event precision, recall and F1
 
 Specification identifier: `event_f1/1`.

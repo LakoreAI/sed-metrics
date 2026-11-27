@@ -1,3 +1,7 @@
+---
+description: Brier score for aligned binary or soft sound event detection targets.
+---
+
 # Brier score for aligned targets, version 1
 
 This is a binary proper scoring rule evaluated independently for one class on

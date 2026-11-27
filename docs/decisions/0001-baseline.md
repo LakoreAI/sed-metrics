@@ -1,8 +1,8 @@
 # ADR 0001 — Project baseline: license, platforms, CI, metric order
 
-Status: recorded (2026-11-27); the license requires maintainer confirmation,
-and the streaming censoring interaction remains unresolved as described in
-`docs/streaming-protocol.md`.
+Status: historical baseline recorded 2026-11-27. The maintainer approved
+Apache-2.0 for publication. The experimental streaming implementation and its
+censoring policy are specified in `docs/streaming-protocol.md`.
 
 ## Context
 
@@ -47,8 +47,7 @@ warnings`, core tests), `python` (wheel build + full Python suite on Linux
 `sed_scores_eval`, synthetic fixtures only because the reference data is not in the
 repository).
 
-The workflow has not been run on a GitHub runner yet; the first push that
-triggers it is the verification.
+See GitHub Actions for the current status of the workflow.
 
 ### 4. Metric order
 
@@ -65,14 +64,14 @@ before implementation; the order is a dependency order, not a deadline.
 
 ### 5. Streaming protocol
 
-Proposed and written down in `docs/streaming-protocol.md`; the interaction of
-censoring with matching and exposure remains open:
+The initial proposal has since been revised; the current contract is in
+`docs/streaming-protocol.md`:
 
-- immutable CREATE alerts only; Update/Cancel/Close are validated, not credited;
+- immutable CREATE alerts only; Update/Cancel/Close are not accepted;
 - eligibility window `[reference onset, reference onset + matching_window]`,
   never pre-onset, no clamping of negative delays;
 - one-to-one assignment per (recording, class) with maximum cardinality, then
-  minimum total delay, stable ties by (reference, alert) index;
+  minimum total delay, with deterministic traversal ties;
 - right-censored references (window not fully observed) are excluded from the
   fully observed cohort and counted, not treated as misses;
 - duplicates and unmatched CREATE alerts are false alerts;
@@ -81,7 +80,7 @@ censoring with matching and exposure remains open:
 ## Consequences
 
 - Reports can state the license, the tested platforms and the metric order.
-- The streaming work has a fixed contract before any code is written.
+- Streaming remains experimental and its contract is versioned separately.
 - Anything not covered here (default averaging policy, timestamp precision,
   release versioning) stays open in the scope document and is decided per
   metric with its specification.

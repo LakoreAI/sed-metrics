@@ -1,0 +1,63 @@
+site_name: SEDMetrics
+site_description: Sound event detection evaluation for Python and Rust
+site_url: https://lakoreai.github.io/sed-metrics/
+repo_url: https://github.com/LakoreAI/sed-metrics
+repo_name: LakoreAI/sed-metrics
+edit_uri: edit/main/docs/
+theme:
+  name: material
+  language: en
+  font:
+    text: Inter
+    code: JetBrains Mono
+  palette:
+    - scheme: default
+      primary: deep purple
+      accent: deep purple
+      toggle:
+        icon: material/weather-night
+        name: Switch to dark mode
+    - scheme: slate
+      primary: deep purple
+      accent: deep purple
+      toggle:
+        icon: material/weather-sunny
+        name: Switch to light mode
+  features:
+    - navigation.tabs
+    - navigation.sections
+    - navigation.top
+    - navigation.footer
+    - content.code.copy
+    - content.action.edit
+    - search.suggest
+    - search.highlight
+plugins:
+  - search
+markdown_extensions:
+  - admonition
+  - tables
+  - toc:
+      permalink: true
+  - pymdownx.details
+  - pymdownx.superfences
+  - pymdownx.tabbed:
+      alternate_style: true
+nav:
+  - Home: index.md
+  - Getting started: getting-started.md
+  - Guides:
+      - Choosing metrics: choosing-metrics.md
+      - Dataset adapters: adapters.md
+      - Streaming protocol: streaming-protocol.md
+  - Metric specifications:
+      - Event F1: metrics/event_f1.md
+      - Segment metrics: metrics/segment_f1.md
+      - Frame labels: metrics/frame_binary.md
+      - Frame events: metrics/frame_events.md
+      - PSDS: metrics/psds.md
+      - piPSDS: metrics/pipsds.md
+      - Brier score: metrics/brier.md
+  - API reference: api.md
+  - Development: development.md
+  - Decisions: decisions/0001-baseline.md

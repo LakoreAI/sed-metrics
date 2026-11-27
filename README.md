@@ -6,7 +6,7 @@ does not train models, extract audio features or detect sound events itself.
 
 The project has two goals: faithful, efficient implementations of established
 evaluation protocols, and research on what conventional offline metrics cannot
-measure — in particular the difference between estimated event boundaries and
+measure, in particular the difference between estimated event boundaries and
 the time at which a decision actually becomes available.
 
 ## Status
@@ -15,10 +15,10 @@ This is an early bootstrap. The implemented and planned features are listed belo
 
 | Area | Status |
 | --- | --- |
-| Collar-based event precision / recall / F1 (micro, macro, per class, with counts and mean localization error) | Implemented — Rust core + Python bindings |
-| Segment-based precision / recall / F1 with S/D/I error rate | Implemented — Rust core + Python bindings |
-| PSDS (intersection-based DTC/GTC/CTTC, PSDS1/PSDS2 profiles) | Implemented — Rust core + Python bindings |
-| Dataset adapters: URBAN-SED v2.0.0 (dir or `.tar.gz`), AudioSet strong parquet | Implemented — `pyarrow` optional, AudioSet only |
+| Collar-based event precision / recall / F1 (micro, macro, per class, with counts and mean localization error) | Implemented in Rust and Python |
+| Segment-based precision / recall / F1 with S/D/I error rate | Implemented in Rust and Python |
+| PSDS (intersection-based DTC/GTC/CTTC, PSDS1/PSDS2 profiles) | Implemented in Rust and Python |
+| Dataset adapters: URBAN-SED v2.0.0 (dir or `.tar.gz`), AudioSet strong parquet | Implemented; `pyarrow` is optional and only needed for AudioSet |
 | Reference parity | Tested for selected fixtures against `sed_eval` 0.2.1 (event, segment) and `sed_scores_eval` 0.0.4 (PSDS), including per-class PSDS curves |
 | JSON evaluation report + `sedmetrics evaluate` CLI | Implemented |
 | Frame precision/recall/F1, AP and AUROC | Implemented for aligned labels or event-to-frame mapping, with classwise, micro and macro results for event tracks |
@@ -29,20 +29,27 @@ This is an early bootstrap. The implemented and planned features are listed belo
 
 Correctness caveats that apply right now:
 
-- Event and segment parity is verified against `sed_eval` 0.2.1; PSDS parity
-  against `sed_scores_eval` 0.0.4. There is no parity evidence for `psds_eval`
-  (superseded here by the intersection-based criteria) or scikit-learn.
+- Selected event and segment fixtures are compared with `sed_eval` 0.2.1,
+  PSDS and piPSDS fixtures with `sed_scores_eval` 0.0.4, and frame and Brier
+  fixtures with scikit-learn. There is no parity evidence for `psds_eval`.
 - Parity runs use synthetic predictions derived from references, on sampled
   URBAN-SED test clips and AudioSet strong clips. They are not a benchmark of
   any system.
 - `sedmetrics evaluate` reads predictions from a TSV/CSV table and reports
   event/segment metrics; PSDS needs score tracks and is available through the
-  Python API only. DCASE score files and model checkpoints are not read, and
-  there is no batch/streaming API.
-- Apache-2.0 is declared in the repository; the supplied project scope reserves
-  the license decision for the maintainer, so maintainer confirmation is pending.
+  Python API only. DCASE score files and model checkpoints are not read. The
+  experimental streaming API evaluates complete CREATE alert logs.
 
-## Install (from source)
+## Install
+
+```bash
+python -m pip install sedmetrics
+```
+
+If a compatible wheel is unavailable, installing the source distribution
+requires a Rust compiler. The Rust library is available as `sedmetrics-core`.
+
+## Install from source
 
 Requires Rust 1.85+ and Python 3.10+.
 
@@ -224,9 +231,9 @@ pip install "sedmetrics[parity]"       # sed_eval 0.2.1 oracle for parity tests
 SEDMETRICS_RAW_DATA=/path/to/data/raw python -m pytest tests/parity
 ```
 
-The PSDS parity suite needs `sed_scores_eval`, which needs a working SciPy and
-`pandas < 3`. On this machine the Python 3.10 SciPy wheel does not load, so the
-oracle runs from a separate 3.12 environment:
+The PSDS parity suite needs `sed_scores_eval`, a working SciPy, and
+`pandas < 3`. If the dependencies do not load in your development environment,
+run the oracle from a separate Python 3.12 environment:
 
 ```bash
 uv venv --python 3.12 .venv-oracle
@@ -243,14 +250,14 @@ covered by the Python tests.
 
 ## Documentation
 
-- `docs/metrics/event_f1.md` — specification of the implemented metric
+- `docs/metrics/event_f1.md`: specification of the implemented metric
   (definition, matching policy, aggregation, undefined values, defaults,
   hand-computed example, parity evidence, limitations).
-- `docs/metrics/segment_f1.md` — segment-based metric and S/D/I decomposition.
-- `docs/metrics/psds.md` — PSDS definition, criteria, profiles and parity.
-- `docs/adapters.md` — dataset formats, id assignment, duration rules.
-- `docs/streaming-protocol.md` — provisional streaming evaluation contract and unresolved censoring policy.
-- `docs/decisions/0001-baseline.md` — license, platforms, CI and metric order.
+- `docs/metrics/segment_f1.md`: segment-based metric and S/D/I decomposition.
+- `docs/metrics/psds.md`: PSDS definition, criteria, profiles and parity.
+- `docs/adapters.md`: dataset formats, id assignment, duration rules.
+- `docs/streaming-protocol.md`: experimental streaming evaluation contract and censoring policy.
+- `docs/decisions/0001-baseline.md`: license, platforms, CI and metric order.
 
 ## Supported platforms
 
@@ -264,8 +271,8 @@ CPython 3.10-3.13 via the `abi3-py310` stable ABI, so one wheel per platform
 works across those versions. Rust 1.85+ is required to build from source.
 
 CI (`.github/workflows/ci.yml`) runs the Rust checks, the Python suite on Linux
-and macOS, and the reference-parity suite on Linux. The GitHub Actions
-configuration has not yet been exercised on a runner.
+and macOS, and the reference-parity suite on Linux. See GitHub Actions for the
+status of the latest run.
 
 ## License
 

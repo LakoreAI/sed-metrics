@@ -1,3 +1,7 @@
+---
+description: Load URBAN-SED and AudioSet Strong annotations into SEDMetrics datasets.
+---
+
 # Dataset adapters
 
 Adapters turn on-disk reference data into a `sedmetrics.Dataset`: validated
@@ -39,8 +43,8 @@ official `URBAN-SED_v2.0.0.tar.gz`.
 - **Clips without events are kept.** They appear in `dataset.durations` and can
   be predicted on; that matters for false-alarm and exposure analysis.
 - Duration: `clip_duration` (default 10 s) is a documented convention, not read
-  from the audio. If an annotation ends later than the nominal duration — some
-  URBAN-SED rows end at `10.000000000000002` for a 10 s clip — the clip duration
+  from the audio. Some URBAN-SED rows end at `10.000000000000002` for a 10 s
+  clip. If an annotation ends later than the nominal duration, the clip duration
   is extended to that offset instead of truncating the annotation.
 - Reading the `.tar.gz` streams the archive and stops at the end of the
   `annotations/` tree, so the 6.6 GB of audio is not decompressed. This relies
@@ -55,8 +59,8 @@ Input: a directory of `*.parquet` batches (for example CLAPv2's
 
 Used columns:
 
-- `audio_len` — decoded audio duration in seconds.
-- `raw_text` — list of header lines; the loader reads the line starting with
+- `audio_len`: decoded audio duration in seconds.
+- `raw_text`: list of header lines; the loader reads the line starting with
   `Strong events:`, whose entries look like
   `(0.000s - 1.435s) Male speech, man speaking (/m/05zppz)`.
 

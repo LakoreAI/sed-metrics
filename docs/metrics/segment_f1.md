@@ -1,3 +1,7 @@
+---
+description: Segment-based sound event detection F1 and substitution, deletion and insertion error rates.
+---
+
 # Segment-based precision, recall, F1 and error rate
 
 Specification identifier: `segment_f1/1`.

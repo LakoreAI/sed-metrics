@@ -1,3 +1,7 @@
+---
+description: Post-processing independent polyphonic sound detection score over supplied score tracks.
+---
+
 # Post-processing independent PSDS
 
 Status: established envelope for a finite, explicitly supplied set of

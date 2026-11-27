@@ -21,6 +21,11 @@ classifiers = [
     "Topic :: Scientific/Engineering",
 ]
 
+[project.urls]
+Homepage = "https://github.com/LakoreAI/sed-metrics"
+Repository = "https://github.com/LakoreAI/sed-metrics"
+Issues = "https://github.com/LakoreAI/sed-metrics/issues"
+
 [project.scripts]
 sedmetrics = "sedmetrics.cli:main"
 

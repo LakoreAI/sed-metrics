@@ -1,3 +1,7 @@
+---
+description: Experimental sound event alert evaluation, matching, delay, censoring and false-alert rates.
+---
+
 # Streaming evaluation protocol (experimental CREATE baseline)
 
 Status: **experimental implementation, version `streaming_create/1`**.
@@ -93,8 +97,8 @@ reference `i` (`d_i = +inf` for a fully observed miss):
   count and recall; never rank systems by delay conditional on detection alone.
 - `FA/h = unmatched CREATE alerts / observed audio hours`.
 
-`TW-F1` and the deadline–false-alarm surface remain research items; they are not
-part of this baseline. A deadline–false-alarm envelope may only include
+`TW-F1` and the deadline/false-alarm surface remain research items; they are not
+part of this baseline. A deadline/false-alarm envelope may only include
 configurations that correspond to realizable causal policies and their own alert
 logs.
 

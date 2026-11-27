@@ -1,4 +1,8 @@
-# PSDS — Polyphonic Sound Detection Score
+---
+description: Polyphonic sound detection score, intersection criteria, profiles and operating curves.
+---
+
+# PSDS: polyphonic sound detection score
 
 Specification identifier: `psds/1`.
 
@@ -76,7 +80,7 @@ Around this family of operating points:
 3. Macro TPR: `mean_c TPR_c(e) - alpha_st · std_c TPR_c(e)` (population std),
    clamped at 0. Append a final point at `max_efpr`.
 4. `PSDS = (1 / max_efpr) · Σ_i TPR(e_i) · (e_{i+1} - e_i)` over the sorted
-   grid — a **left-endpoint staircase integral**, not a trapezoid rule.
+   grid, using a left-endpoint staircase integral instead of a trapezoid rule.
 
 This is the intersection-based formulation: no IoU, no one-to-one assignment,
 and a detection can be "relevant" while contributing to several references.
@@ -119,7 +123,7 @@ The defaults are the **PSDS1** profile, with the DCASE 2023/2024 settings:
 
 `alpha_st` must be passed as 1.0. `sed_scores_eval` defaults `alpha_st` to 0.0,
 and the local `YOLIO-WOLRD/src/metrics.py` wrapper also defaults it to 0.0
-while describing the result as PSDS1 — that is not the DCASE PSDS1 definition.
+while describing the result as PSDS1. That differs from the DCASE PSDS1 definition.
 Parity tests here pass every parameter explicitly.
 
 `cttc_threshold` must be set exactly when `alpha_ct > 0`; the implementation
@@ -170,5 +174,6 @@ length, not half of the reference.
 - No CTTC on single-class datasets in the reference implementation (it crashes);
   here `alpha_ct > 0` with one class reduces to the mean over zero other classes,
   i.e. no cross-trigger term.
-- No piPSDS, no bootstrapped PSDS, no score-grid resampling. PSDS1/PSDS2 presets
+- No bootstrapped PSDS or score-grid resampling. piPSDS is described in
+  [pipsds.md](pipsds.md). PSDS1/PSDS2 presets
   are documented parameter sets, not separate functions.
