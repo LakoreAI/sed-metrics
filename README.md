@@ -4,6 +4,9 @@ Evaluation metrics for Sound Event Detection (SED), with a Rust computational
 core and Python bindings through PyO3. SEDMetrics evaluates model outputs; it
 does not train models, extract audio features or detect sound events itself.
 
+Read the [documentation](https://lakoreai.github.io/sed-metrics/) for installation,
+examples, metric definitions, and API details.
+
 The project has two goals: faithful, efficient implementations of established
 evaluation protocols, and research on what conventional offline metrics cannot
 measure, in particular the difference between estimated event boundaries and
