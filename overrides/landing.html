@@ -129,8 +129,8 @@
           </article>
           <article class="card card--row card--open span-6">
             <h3><a href="{{ 'metrics/psds/' | url }}">Threshold sweep scores</a></h3>
-            <p>PSDS is the area under the curve; piPSDS takes the envelope.</p>
-            <div class="panel sed-panel"><div class="pen" data-figure="psds" data-layout="thumb" data-scenario="exposure" data-frame="3" data-metric="psds1" data-label="PSDS1" data-view="curve"></div></div>
+            <p>A 1.2 s hole in a 3 s event takes PSDS1 to zero and leaves PSDS2 at one.</p>
+            <div class="panel sed-panel"><div class="pen" data-figure="psds" data-layout="thumb" data-scenario="gap" data-frame="6" data-metric="psds1,psds2" data-view="curve"></div></div>
           </article>
           <article class="card card--row card--open span-6">
             <h3><a href="{{ 'streaming-protocol/' | url }}">Alert timing scores</a></h3>

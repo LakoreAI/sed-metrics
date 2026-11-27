@@ -26,6 +26,35 @@ print(result.f1, result.n_correct, result.n_insertions, result.n_deletions)
 `Dataset.event_f1` forwards to `sm.event.f1` with the dataset's recording
 durations, so events outside their recording are rejected rather than clipped.
 
+## Names, reports and the command line
+
+Predictions can use the dataset's class and recording names:
+
+```python
+result = dataset.event_f1(
+    [("soundscape_test_1", "siren", 1.05, 2.45)],
+    average="macro",
+)
+print(dataset.segment_f1(predictions, segment_length=1.0).error_rate)
+```
+
+`sedmetrics.report` writes a JSON report of event and segment metrics:
+
+```python
+report = sm.report.evaluate(dataset, predictions, metrics=["event_f1", "segment_f1"])
+sm.report.write_report(report, "results/run.json")
+```
+
+The same report is available from the command line, with predictions in a TSV or
+CSV table:
+
+```bash
+sedmetrics evaluate --dataset urban-sed --root data/raw --predictions preds.tsv --out results/run.json
+```
+
+The command covers event and segment metrics. PSDS needs score tracks and is
+available from Python only. DCASE score files and model checkpoints are not read.
+
 ## Strictness
 
 Adapters never skip data silently. A malformed annotation row, a missing

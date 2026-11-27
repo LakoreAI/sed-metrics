@@ -85,11 +85,16 @@
 .sed-panel .pen-score-tile dd { font-size: 20px; }
 .sed-panel .pen-bar { width: 100%; max-width: 160px; justify-self: end; margin: 0; }
 .sed-panel .pen-plot { --pen-chart-max: 100; }
+/* two scores side by side, each keyed to its line */
+.sed-panel .pen-scores:has(> :nth-child(2)) { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--s-5); }
+.sed-panel .pen-score-tile dt.pen-key { display: inline-flex; }
 @media (max-width: 639px) {
   .sed-panel { padding: var(--s-2) var(--s-3); }
   .sed-panel .pen { height: 120px; gap: var(--s-1); }
   .sed-panel .pen-score-tile dd { font-size: 16px; }
   .sed-panel .pen-plot { --pen-chart-max: 88; }
+  /* two scores have room for the label and value only */
+  .sed-panel .pen-scores:has(> :nth-child(2)) :is(.pen-delta, .pen-bar) { display: none; }
 }
 
 /* ---- formulas and code ------------------------------------------------ */

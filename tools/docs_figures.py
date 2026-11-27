@@ -567,10 +567,13 @@ def psds_frame(refs, detections, *, exposure=3600.0, alpha_st=1.0, note=None, th
     for _, c, on, off in refs:
         covered = sum(overlap(d, (on, off)) for d in found[c])
         ref_states.append("ref" if round(covered, 6) >= round(0.7 * (off - on), 6) else "missed")
-    lines = []
-    for label, result, style in (("PSDS1", one, "main"), ("PSDS2", two, "alt")):
-        lines.append({"label": label, "style": style, "step": True,
-                      "points": [[r(x, 4), r(y)] for x, y in zip(result.efpr, result.tpr)]})
+    curves = [
+        {"title": f"{label} operating curve", "xLabel": "Effective false positives per hour",
+         "yLabel": "Effective TPR", "xMax": 100, "yMax": 1,
+         "lines": [{"label": label, "style": "main", "step": True,
+                    "points": [[r(x, 4), r(y)] for x, y in zip(result.efpr, result.tpr)]}]}
+        for label, result in (("PSDS1", one), ("PSDS2", two))
+    ]
     series = [[a, b, v] for a, b, v in zip(bounds, bounds[1:], columns[classes[0]])]
     timeline = {
         "domain": [0, 10],
@@ -583,8 +586,7 @@ def psds_frame(refs, detections, *, exposure=3600.0, alpha_st=1.0, note=None, th
         timeline["series"] = {"label": "Score", "threshold": threshold, "steps": series}
     return {
         "timeline": timeline,
-        "curve": {"xLabel": "Effective false positives per hour", "yLabel": "Effective TPR",
-                  "xMax": 100, "yMax": 1, "lines": lines},
+        "curves": curves,
         "scores": {"psds1": r(one.psds), "psds2": r(two.psds)},
         "note": note,
     }

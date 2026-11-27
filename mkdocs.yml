@@ -39,6 +39,7 @@ theme:
     - navigation.footer
     - toc.follow
     - content.code.copy
+    - content.tabs.link
     - content.action.edit
     - search.suggest
     - search.highlight
@@ -54,6 +55,12 @@ markdown_extensions:
   - pymdownx.arithmatex:
       generic: true
   - pymdownx.details
+  - pymdownx.emoji:
+      emoji_index: !!python/name:material.extensions.emoji.twemoji
+      emoji_generator: !!python/name:material.extensions.emoji.to_svg
+      options:
+        custom_icons:
+          - overrides/.icons
   - pymdownx.superfences
   - pymdownx.tabbed:
       alternate_style: true
@@ -66,6 +73,7 @@ extra_javascript:
   - assets/vendor/katex/auto-render.min.js
   - assets/javascripts/math.js
   - assets/javascripts/penalty.js
+  - assets/javascripts/tabs.js
 nav:
   - Home: index.md
   - Getting started: getting-started.md
@@ -84,4 +92,3 @@ nav:
       - Brier score: metrics/brier.md
   - API reference: api.md
   - Development: development.md
-  - Decisions: decisions/0001-baseline.md

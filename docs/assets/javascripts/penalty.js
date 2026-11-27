@@ -453,6 +453,9 @@
 
       charts.textContent = "";
       var specs = [];
+      (frame.curves || []).forEach(function (spec) {
+        specs.push({ title: spec.title, chart: Object.assign({ lostArea: true }, spec) });
+      });
       if (frame.curve) {
         var curve = Object.assign({}, frame.curve);
         curve.lostArea = data.id !== "brier";
@@ -652,9 +655,15 @@
     var s = data.scenarios.filter(function (item) { return item.id === id; })[0];
     var frame = s.frames[Number(host.getAttribute("data-frame"))];
     var key = host.getAttribute("data-metric");
-    var m = s.metrics.filter(function (item) { return item.key === key; })[0];
-    var named = Object.assign({}, m, { label: host.getAttribute("data-label") || m.label });
-    var head = el("dl", { class: "pen-scores" }, [scoreTile(named, frame.scores[key])]);
+    /* data-metric may name two scores; each tile then carries its line style as a key */
+    var keys = key.split(",");
+    var head = el("dl", { class: "pen-scores" }, keys.map(function (k, i) {
+      var m = s.metrics.filter(function (item) { return item.key === k; })[0];
+      var named = Object.assign({}, m, { label: (keys.length === 1 && host.getAttribute("data-label")) || m.label });
+      var tile = scoreTile(named, frame.scores[k]);
+      if (keys.length > 1) tile.querySelector("dt").className = "pen-key pen-key--" + (i ? "alt" : "main");
+      return tile;
+    }));
     var plot = el("div", { class: host.getAttribute("data-view") === "curve" ? "pen-plot" : "pen-timeline" });
     host.textContent = "";
     host.appendChild(head);
@@ -663,7 +672,14 @@
     function draw() {
       var width = Math.max(plot.clientWidth, 240);
       if (host.getAttribute("data-view") === "curve") {
-        var spec = Object.assign({ lostArea: data.id !== "brier" }, frame.curve);
+        /* two profiles share one small chart: the second dashed, and no hatched area */
+        var spec = frame.curves
+          ? Object.assign({}, frame.curves[0], {
+              lines: frame.curves.map(function (c, i) {
+                return Object.assign({}, c.lines[0], { style: i ? "alt" : "main" });
+              })
+            })
+          : Object.assign({ lostArea: data.id !== "brier" }, frame.curve);
         drawChart(plot, spec, width);
       } else {
         drawTimeline(plot, frame.timeline, width, true);

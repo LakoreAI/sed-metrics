@@ -51,6 +51,51 @@ the formulas, red terms push the score down.
     recordings and an event covers at least `dtc_threshold` of its clip. Try
     *Always-on detector* above, and report how the audio was split.
 
+## PSDS1 and PSDS2
+
+PSDS1 and PSDS2 are one metric with two parameter sets. PSDS1 asks for tight
+localisation: 70% on both overlap criteria and no cross-trigger charge. PSDS2
+accepts loose localisation at 10% and charges for confusing one class with
+another. [Section 5](#5-defaults-and-profiles) lists every parameter.
+
+The two differ in the effective false-positive rate. PSDS1 counts false
+positives only:
+
+$$
+e_c^{\text{PSDS1}}(\tau) = U\, \cost{\frac{FP_c(\tau)}{T}}
+$$
+
+PSDS2 adds the mean cross-trigger rate over the other classes, weighted by 0.5:
+
+$$
+e_c^{\text{PSDS2}}(\tau) = U \left( \cost{\frac{FP_c(\tau)}{T}} +
+\cost{\frac{0.5}{C - 1} \sum_{k \ne c} \frac{CT_{c,k}(\tau)}{L_k}} \right)
+$$
+
+The defaults compute PSDS1. For PSDS2, pass its four parameters. In this example
+the class 0 detector also fires on the class 1 event, and one hour of audio is
+split into 10 s recordings:
+
+```python
+from sedmetrics import SEDMetrics
+
+references = [(0, 0, 1.0, 4.0), (0, 1, 6.0, 9.0)]
+scores = {0: ([0.0, 1.0, 4.0, 6.0, 7.0, 8.0, 9.0, 10.0],
+              {0: [0.0, 0.7, 0.0, 0.0, 0.9, 0.0, 0.0],
+               1: [0.0, 0.0, 0.0, 0.7, 0.7, 0.7, 0.0]})}
+scores.update({i: ([0.0, 10.0], {0: [0.0], 1: [0.0]}) for i in range(1, 360)})
+common = dict(metric="psds", recordings={i: 10.0 for i in range(360)}, scores=scores)
+
+psds1 = SEDMetrics.eval(references, **common)
+psds2 = SEDMetrics.eval(references, **common, dtc_threshold=0.1, gtc_threshold=0.1,
+                        cttc_threshold=0.3, alpha_ct=0.5)
+print(round(psds1.psds, 3), round(psds2.psds, 3))  # 0.99 0.0
+```
+
+PSDS1 loses 1% for one false positive in an hour. The same detection is also a
+cross-trigger on 3 s of the other class, which PSDS2 prices at 600 per hour, far
+past the limit of 100. The figure above shows both curves for each mistake.
+
 ## 1. Name, status, input representation
 
 PSDS measures detection quality independently of a chosen threshold by

@@ -31,6 +31,21 @@ Install `.[parity]` to run selected comparisons against pinned `sed_eval`,
 `SEDMETRICS_RAW_DATA` and skip when their files are unavailable. The comparison
 fixtures do not establish parity for every possible input.
 
+To point the suite at local dataset samples and use a separate oracle
+environment:
+
+```bash
+uv venv --python 3.12 .venv-oracle
+uv pip install --python .venv-oracle/bin/python pytest pyarrow "sedmetrics[parity]" \
+    --find-links dist
+maturin build --release -o dist && uv pip install --python .venv-oracle/bin/python \
+    --force-reinstall dist/*.whl
+SEDMETRICS_RAW_DATA=/path/to/data/raw .venv-oracle/bin/python -m pytest tests/parity
+```
+
+Parity runs use synthetic predictions derived from references, on sampled
+URBAN-SED and AudioSet Strong clips. They are not a benchmark of any system.
+
 !!! deviation "Current behaviour: a broken SciPy stops the run"
 
     The `sed_eval` and `sed_scores_eval` suites skip when their oracle cannot be

@@ -44,6 +44,22 @@ alert, the red one a false alert.
 | Repeated alert for one event | Every extra one is a false alert |
 | Event too close to the end of the recording | Censored: left out of recall, counted separately |
 
+## Usage
+
+```python
+from sedmetrics import SEDMetrics
+
+result = SEDMetrics.eval(
+    references=[(0, 0, 0.0, 0.5)], mode="streaming", recordings={0: 10.0},
+    alerts=[(0, 1, 0, 0.1, 0.1, 0.1)],
+    class_ids=[0], matching_window=1.0, deadlines=[0.25, 0.5], horizon=1.0, clock="simulated",
+)
+print(result["deadline_recall"], result["audr"], result["false_alerts_per_hour"])
+```
+
+An alert is `(recording_id, alert_id, class_id, emitted_at,
+audio_available_until, latest_audio_used)`; the last value may be `None`.
+
 ## 1. Entities and clocks
 
 - All times are seconds, `f64`, on one recording's time axis.

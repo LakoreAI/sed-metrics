@@ -16,6 +16,7 @@ from html import escape
 from pathlib import Path
 
 PEN = re.compile(r'<div class="pen" data-figure="(?P<name>\w+)"(?: data-scenarios="(?P<only>[\w,]+)")?></div>')
+ICON = re.compile(r":logos-[a-z0-9-]+:\s*")
 _pages: dict[str, dict] = {}
 
 
@@ -160,7 +161,7 @@ def on_post_build(config, **kwargs):
         meta = _pages[name]["meta"]
         title = meta.get("title") or name
         index.append(f"- [{title}]({address(name)}): {meta.get('description', '')}")
-        body = PEN.sub("", _pages[name]["markdown"]).strip()
+        body = ICON.sub("", PEN.sub("", _pages[name]["markdown"])).strip()
         full += [f"<!-- {address(name)} -->", "", body, ""]
     # The comparison is the most quotable thing on the site: give its numbers as text.
     data = _figure(config, "matrix")
