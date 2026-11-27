@@ -1,18 +1,55 @@
 ---
-description: Collar-based sound event detection precision, recall, F1, matching and aggregation.
+title: "Event-based F1 with collars for SED"
+description: "Definition, formulas, matching policy and penalties of collar-based event precision, recall and F1 for sound event detection."
+faq:
+  - q: "What collar does event F1 use by default?"
+    a: "0.2 s on the onset. On the offset, the larger of 0.2 s and 20% of the reference duration."
+  - q: "Is there partial credit for a near miss?"
+    a: "No. A prediction just outside a collar counts as one false positive and one false negative."
+  - q: "What is the difference between micro and macro event F1?"
+    a: "Micro pools counts over all classes before computing ratios. Macro averages each ratio over the classes where it is defined."
 ---
 
 # Collar-based event precision, recall and F1
 
+Event-based F1, or collar F1, scores a sound event detector by matching each predicted event to at most one reference event of the same class. With the default settings a pair counts only when the onsets differ by at most 0.2 s and the offsets by at most 0.2 s or 20% of the reference duration, whichever is larger.
+
 Specification identifier: `event_f1/1`.
 
-Status: **implemented** (bootstrap). Established metric family; selected
+Status: implemented (bootstrap). Established metric family; selected
 fixtures are compared against `sed_eval` 0.2.1 as described below.
 
 Source: Mesaros, Heittola and Virtanen, *Metrics for Polyphonic Sound Event
 Detection*, Applied Sciences 6(6):162, 2016, <https://doi.org/10.3390/app6060162>,
 together with the event-based evaluation in `sed_eval` 0.2.x. The collar rules
 below follow that protocol; deviations are listed under *Limitations*.
+
+## What does event F1 penalise?
+
+Event F1 asks one question per pair: do both boundaries land inside their
+collars? There is no partial credit. Pick a mistake and move the slider; the
+grey bands are the collars.
+
+<div class="pen" data-figure="event_f1"></div>
+
+| Mistake | Effect on the counts |
+| --- | --- |
+| Onset or offset just outside its collar | The pair is lost: one FP and one FN |
+| Event reported in pieces | At most one piece can match; with no piece inside both collars, every piece is an FP and the reference an FN |
+| Two events reported as one | At most one reference can match; with offsets evaluated, usually none does |
+| Extra detection | One FP |
+| Missed event | One FN |
+| Right interval, wrong class | One FP for the predicted class and one FN for the reference class |
+
+In the formulas on this page, red terms lower the score. A near miss costs
+more than silence. Saying nothing about an event adds one FN;
+reporting it just outside the collar adds an FN and an FP:
+
+$$
+F_1^{\text{silent}} = \frac{2\,TP}{2\,TP + FP + FN + \cost{1}}
+\;\ge\;
+F_1^{\text{near miss}} = \frac{2\,TP}{2\,TP + FP + FN + \cost{2}}
+$$
 
 ## 1. Input representation
 
@@ -34,30 +71,40 @@ metrics such as false alerts per hour, not by event F1.
 
 ## 2. Definition
 
-For one `(recording, class)` group, a prediction `p` is **eligible** for a
-reference `r` when
+For one `(recording, class)` group, a prediction $p$ is eligible for a
+reference $r$ when both conditions hold:
 
-```
-|p.onset  - r.onset|  <= onset_collar
-|p.offset - r.offset|  <= max(offset_collar, offset_ratio * (r.offset - r.onset))
-```
+$$
+\lvert p_{\text{on}} - r_{\text{on}} \rvert \le c_{\text{on}}
+$$
 
-with the second condition applied only when `evaluate_offset` is true.
+$$
+\lvert p_{\text{off}} - r_{\text{off}} \rvert \le
+\max\bigl(c_{\text{off}},\; \rho\,(r_{\text{off}} - r_{\text{on}})\bigr)
+$$
 
-Counts over all classes and recordings:
+where $c_{\text{on}}$ is `onset_collar`, $c_{\text{off}}$ is `offset_collar` and
+$\rho$ is `offset_ratio`. The second condition applies only when
+`evaluate_offset` is true.
 
-```
-TP = number of matched reference/prediction pairs
-FP = n_predicted - TP        (insertions)
-FN = n_reference - TP        (deletions)
+With $M$ the matched pairs, counted over all classes and recordings:
 
-precision = TP / (TP + FP) = TP / n_predicted
-recall    = TP / (TP + FN) = TP / n_reference
-F1        = 2 TP / (2 TP + FP + FN)
-```
+$$
+TP = \lvert M \rvert, \qquad \cost{FP} = N_{\text{pred}} - TP, \qquad \cost{FN} = N_{\text{ref}} - TP
+$$
+
+$$
+P = \frac{TP}{TP + \cost{FP}}, \qquad R = \frac{TP}{TP + \cost{FN}}, \qquad
+F_1 = \frac{2\,TP}{2\,TP + \cost{FP + FN}}
+$$
 
 `mean_onset_error` and `mean_offset_error` are the mean absolute differences
-over matched pairs only, in seconds.
+over matched pairs only, in seconds:
+
+$$
+\bar{\varepsilon}_{\text{on}} = \frac{1}{\lvert M \rvert}
+\sum_{(r,p) \in M} \lvert p_{\text{on}} - r_{\text{on}} \rvert
+$$
 
 ## 3. Matching policy
 
@@ -65,15 +112,15 @@ over matched pairs only, in seconds.
   prediction with at most one reference.
 - Eligibility is evaluated independently per `(recording, class)` group; a
   prediction can never match a reference of another class or recording.
-- Matching is **maximum cardinality** within each group, computed with
+- Matching is maximum cardinality within each group, computed with
   augmenting paths (Kuhn's algorithm). A greedy assignment is not used, because
   it can lose valid true positives (a regression test covers this).
-- Among maximum-cardinality matchings the implementation does **not** minimise
+- Among maximum-cardinality matchings the implementation does not minimise
   total localization error. The selected matching is deterministic for a given
   input order: events are sorted by `(onset, offset)` and references are
   processed in that order, preferring the lowest-index eligible prediction.
   Counts are invariant to input permutation; the particular pairs need not be.
-- Collar comparisons are exact (`<=`) with **no** floating-point epsilon.
+- Collar comparisons are exact (`<=`) with no floating-point epsilon.
   `offset <= onset + collar` matches; `offset` one ULP beyond does not. Note
   that decimal inputs such as `1.2 - 1.0` are not exact in binary, so
   "0.2 s collar" is not bit-exactly 0.2 in every case. Timings that matter at
@@ -86,9 +133,14 @@ over matched pairs only, in seconds.
 
 `average="micro"` pools counts over all classes and then computes the ratios
 (the `TP`-weighted result). `average="macro"` computes each ratio per class and
-takes the unweighted mean over the classes where **that** ratio is defined.
+takes the unweighted mean over the classes where that ratio is defined. For
+a ratio $m$ with defined classes $C_m$:
 
-Consequences, which are deliberate:
+$$
+m_{\text{macro}} = \frac{1}{\lvert C_m \rvert} \sum_{c \in C_m} m_c
+$$
+
+Two consequences follow:
 
 - Macro F1 is *not* the harmonic mean of macro precision and macro recall, and
   the precision, recall and F1 means can have different support (a class with
@@ -120,7 +172,7 @@ counts). Neither value is universal: other challenges use different collars and
 macro averaging, so callers should pass the profile they intend to reproduce.
 
 `sed_eval` 0.2.1 exposes the same rule as `t_collar` plus
-`percentage_of_length`, but its `percentage_of_length` default is **0.5**, not
+`percentage_of_length`, but its `percentage_of_length` default is 0.5, not
 0.2. Reproducing this profile in `sed_eval` requires passing
 `t_collar=0.2, percentage_of_length=0.2` explicitly.
 
@@ -155,7 +207,7 @@ macro recall are both `0.55` and their harmonic mean is `0.55`.
   dependency is a test-only extra, never a runtime dependency.
 - One intentional reporting difference: `sed_eval` counts leftover
   reference/system pairs that satisfy the collars but disagree on class as
-  **substitutions** (`Nsubs`) and subtracts them from its `Nfp`/`Nfn`. This
+  substitutions (`Nsubs`) and subtracts them from its `Nfp`/`Nfn`. This
   implementation follows the classification convention
   `FP = n_predicted - TP`, `FN = n_reference - TP`, so its insertion and
   deletion counts equal `sed_eval`'s `Nfp + Nsubs` and `Nfn + Nsubs`.
@@ -181,7 +233,6 @@ macro recall are both `0.55` and their harmonic mean is `0.55`.
   `sed_eval`'s event-based reporting.
 - Only one matching policy is implemented; intersection-based metrics (PSDS)
   will need a different one and must not reuse this matcher.
-- No evaluation of `evaluate_offset=False` against a reference implementation.
 - No support yet for confidence values, class names, score tracks or recording
   boundaries beyond optional validation.
 - Collar parameters are in seconds only; there is no sample-index or tick

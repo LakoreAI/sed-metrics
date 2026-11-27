@@ -1,25 +1,34 @@
 site_name: SEDMetrics
 site_description: Sound event detection evaluation for Python and Rust
+hooks:
+  - tools/mkdocs_hooks.py
 site_url: https://lakoreai.github.io/sed-metrics/
+site_author: The SEDMetrics authors
+copyright: "&copy; 2026 The SEDMetrics authors. Apache-2.0."
 repo_url: https://github.com/LakoreAI/sed-metrics
 repo_name: LakoreAI/sed-metrics
 edit_uri: edit/main/docs/
 theme:
   name: material
+  custom_dir: overrides
   language: en
+  logo: assets/images/mark.svg
+  favicon: assets/images/mark.svg
   font:
-    text: Inter
+    text: Host Grotesk
     code: JetBrains Mono
   palette:
-    - scheme: default
-      primary: deep purple
-      accent: deep purple
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: custom
+      accent: custom
       toggle:
         icon: material/weather-night
         name: Switch to dark mode
-    - scheme: slate
-      primary: deep purple
-      accent: deep purple
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: custom
+      accent: custom
       toggle:
         icon: material/weather-sunny
         name: Switch to light mode
@@ -28,6 +37,7 @@ theme:
     - navigation.sections
     - navigation.top
     - navigation.footer
+    - toc.follow
     - content.code.copy
     - content.action.edit
     - search.suggest
@@ -36,21 +46,35 @@ plugins:
   - search
 markdown_extensions:
   - admonition
+  - attr_list
+  - md_in_html
   - tables
   - toc:
       permalink: true
+  - pymdownx.arithmatex:
+      generic: true
   - pymdownx.details
   - pymdownx.superfences
   - pymdownx.tabbed:
       alternate_style: true
+extra_css:
+  - assets/vendor/katex/katex.min.css
+  - assets/stylesheets/sedmetrics.css
+  - assets/stylesheets/penalty.css
+extra_javascript:
+  - assets/vendor/katex/katex.min.js
+  - assets/vendor/katex/auto-render.min.js
+  - assets/javascripts/math.js
+  - assets/javascripts/penalty.js
 nav:
   - Home: index.md
   - Getting started: getting-started.md
   - Guides:
+      - How metrics penalise mistakes: penalties.md
       - Choosing metrics: choosing-metrics.md
       - Dataset adapters: adapters.md
       - Streaming protocol: streaming-protocol.md
-  - Metric specifications:
+  - Metrics:
       - Event F1: metrics/event_f1.md
       - Segment metrics: metrics/segment_f1.md
       - Frame labels: metrics/frame_binary.md

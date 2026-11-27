@@ -1,0 +1,222 @@
+/* Figures. One rule of colour: black is reference or credit, red is what costs score.
+   The host page sets the --pen-* tokens; these are the light defaults. */
+.pen,
+.lab {
+  --pen-bg: #ffffff;
+  --pen-ink: #0a0a0a;
+  --pen-muted: #5c5c5c;
+  --pen-line: #e2e2e2;
+  --pen-soft: #f2f2f2;
+  --pen-mid: #d4d4d4;
+  --pen-cost: #d92b21;
+  --pen-cost-bg: #fdeceb;
+}
+
+.pen:not([data-layout]) {
+  margin: 24px 0 32px;
+  padding: 20px;
+  border: 1px solid var(--pen-line);
+  border-radius: 8px;
+  background: var(--pen-bg);
+  color: var(--pen-ink);
+  font-size: 14px;
+  line-height: 1.5;
+}
+.pen:not([data-ready]):not([data-layout]) { min-height: 240px; }
+.pen [hidden] { display: none !important; }
+
+.pen button {
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+}
+
+.pen-tabs,
+.pen-choices { display: flex; flex-wrap: wrap; gap: 6px; }
+.pen-tabs { margin-bottom: 16px; }
+.pen .pen-tab,
+.pen .pen-choice {
+  min-height: 32px;
+  padding: 4px 12px;
+  border: 1px solid var(--pen-line);
+  border-radius: 4px;
+  background: var(--pen-bg);
+  font-size: 13px;
+  font-weight: 500;
+  transition: background-color 140ms, border-color 140ms;
+}
+.pen .pen-tab:hover,
+.pen .pen-choice:hover { border-color: var(--pen-ink); }
+.pen .pen-tab[aria-pressed="true"],
+.pen .pen-choice[aria-pressed="true"] {
+  background: var(--pen-ink);
+  border-color: var(--pen-ink);
+  color: var(--pen-bg);
+}
+.pen button:focus-visible,
+.pen input:focus-visible { outline: 2px solid var(--pen-cost); outline-offset: 2px; }
+
+.pen .pen-intro { margin: 0 0 12px; font-size: 14px; color: var(--pen-muted); }
+.pen-timeline svg,
+.pen-plot svg { display: block; max-width: 100%; overflow: visible; }
+
+.pen-control { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px; margin: 12px 0 16px; }
+.pen-control-label { font-size: 13px; font-weight: 500; }
+.pen-control input[type="range"] { flex: 1 1 180px; accent-color: var(--pen-ink); min-height: 32px; margin: 0; }
+.pen-control output { min-width: 64px; font-variant-numeric: tabular-nums; font-weight: 500; text-align: right; }
+
+.pen-scores,
+.md-typeset .pen-scores {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(92px, 1fr));
+  gap: 1px;
+  margin: 0;
+  border: 1px solid var(--pen-line);
+  border-radius: 6px;
+  overflow: hidden;
+  background: var(--pen-line);
+}
+.pen-score-tile { display: flex; flex-direction: column; gap: 4px; padding: 10px 12px 12px; background: var(--pen-bg); }
+.pen-score-tile dt,
+.md-typeset .pen-score-tile dt { margin: 0; font-size: 13px; font-weight: 400; color: var(--pen-muted); }
+.pen-score-tile dd,
+.md-typeset .pen-score-tile dd {
+  margin: 0;
+  padding: 0;
+  font-size: 24px;
+  line-height: 1.2;
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.02em;
+}
+/* The bar is the penalty: empty when nothing is lost, full red when the whole score is. */
+.pen-bar { display: flex; justify-content: flex-end; height: 4px; margin-top: auto; border-radius: 2px; background: var(--pen-ink); overflow: hidden; }
+.pen-bar i { display: block; height: 100%; background: var(--pen-cost); box-shadow: -2px 0 0 var(--pen-bg); transition: width 200ms; }
+.pen-bar i[style*="width: 0%"] { box-shadow: none; }
+
+.pen .pen-note { margin: 12px 0 0; font-size: 14px; min-height: 3em; }
+
+.pen-charts { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 24px; margin-top: 16px; }
+.pen-chart { min-width: 0; }
+.pen .pen-chart-title { margin: 0 0 8px; font-size: 13px; font-weight: 500; }
+.pen-legend { display: flex; flex-wrap: wrap; gap: 4px 16px; font-size: 13px; color: var(--pen-muted); }
+.pen-key { display: inline-flex; align-items: center; gap: 8px; }
+.pen-key::before { content: ""; width: 18px; border-top: 2px solid var(--pen-ink); }
+.pen-key--alt::before { border-top-style: dashed; border-top-color: var(--pen-muted); }
+.pen-key--faint::before { border-top-style: dotted; border-top-color: var(--pen-faint, #8a8a8a); }
+
+.pen-legend--states { margin-top: 8px; }
+.pen-state { display: inline-flex; align-items: center; gap: 8px; }
+.pen-state::before { content: ""; width: 16px; height: 10px; border-radius: 2px; border: 1.5px solid var(--pen-ink); box-sizing: border-box; }
+.pen-state--ref::before { background: var(--pen-ink); }
+.pen-state--hit::before { background: var(--pen-mid); }
+.pen-state--plain::before { background: var(--pen-mid); border-color: var(--pen-muted); }
+.pen-state--false::before,
+.pen-state--fp::before,
+.pen-state--missed::before,
+.pen-state--fn::before { border-color: var(--pen-cost); background: repeating-linear-gradient(45deg, var(--pen-cost) 0 2px, var(--pen-cost-bg) 2px 5px); }
+.pen-state--missed::before,
+.pen-state--fn::before { border-style: dashed; }
+.pen-state--censored::before { border-style: dotted; border-color: var(--pen-muted); }
+.pen-state--band::before { border: 0; background: var(--pen-ink); opacity: 0.14; }
+.pen-state--alert::before,
+.pen-state--falsealert::before { width: 12px; height: 10px; border: 0; border-radius: 0; background: var(--pen-ink); clip-path: polygon(0 0, 100% 0, 50% 100%); }
+.pen-state--falsealert::before { background: var(--pen-cost); }
+
+.pen-delta { margin-left: 8px; font-size: 13px; font-weight: 500; letter-spacing: 0; color: var(--pen-cost-text, #b4231b); }
+
+.pen-tip {
+  position: fixed;
+  z-index: 100;
+  display: grid;
+  gap: 2px;
+  max-width: 260px;
+  padding: 6px 10px;
+  border-radius: 4px;
+  background: #0a0a0a;
+  color: #ffffff;
+  font-size: 13px;
+  line-height: 1.4;
+  font-variant-numeric: tabular-nums;
+  pointer-events: none;
+}
+.pen-tip[hidden] { display: none; }
+.pen-hit { fill: transparent; }
+.pen-cross { stroke: var(--pen-muted); stroke-width: 1; pointer-events: none; }
+
+/* ---- svg marks -------------------------------------------------------- */
+.pen-lane { fill: var(--pen-muted); font-size: 13px; }
+.pen-tick { fill: var(--pen-muted); font-size: 12px; font-variant-numeric: tabular-nums; }
+.pen-tick--end { text-anchor: end; }
+.pen-axis { stroke: var(--pen-mid); stroke-width: 1; }
+.pen-grid { stroke: var(--pen-line); stroke-width: 1; }
+.pen-band { fill: var(--pen-ink); opacity: 0.07; }
+
+.pen-hatch-bg { fill: var(--pen-cost-bg); }
+.pen-hatch-line { stroke: var(--pen-cost); stroke-width: 2.4; }
+
+.pen-ev { stroke-width: 1.5; }
+.pen-ev--ref { fill: var(--pen-ink); stroke: var(--pen-ink); }
+.pen-ev--hit { fill: var(--pen-mid); stroke: var(--pen-ink); }
+.pen-ev--plain { fill: var(--pen-mid); stroke: var(--pen-muted); }
+.pen-ev--false { stroke: var(--pen-cost); }
+.pen-ev--missed { stroke: var(--pen-cost); stroke-dasharray: 4 3; }
+.pen-ev--censored { fill: var(--pen-bg); stroke: var(--pen-muted); stroke-dasharray: 2 3; }
+.pen-evtext { font-size: 12px; font-weight: 500; text-anchor: middle; pointer-events: none; }
+.pen-evtext--ref { fill: var(--pen-bg); }
+.pen-evtext--hit,
+.pen-evtext--plain,
+.pen-evtext--censored { fill: var(--pen-ink); }
+.pen-evtext--false,
+.pen-evtext--missed { fill: var(--pen-ink); paint-order: stroke; stroke: var(--pen-bg); stroke-width: 4px; stroke-linejoin: round; }
+
+.pen-cell--tp { fill: var(--pen-ink); }
+.pen-cell--tn { fill: var(--pen-soft); }
+.pen-cell--fp { stroke: var(--pen-cost); stroke-width: 1; }
+.pen-cell--fn { stroke: var(--pen-cost); stroke-width: 1; stroke-dasharray: 3 2; }
+
+.pen-score { fill: none; stroke: var(--pen-ink); stroke-width: 1.75; }
+.pen-threshold { stroke: var(--pen-muted); stroke-width: 1; stroke-dasharray: 5 4; }
+.pen-alert--hit { fill: var(--pen-ink); }
+.pen-alert--false { fill: var(--pen-cost); }
+
+.pen-line { fill: none; stroke-width: 2; }
+.pen-line--main { stroke: var(--pen-ink); }
+.pen-line--alt { stroke: var(--pen-muted); stroke-dasharray: 6 4; }
+.pen-line--faint { stroke: var(--pen-faint, #8a8a8a); stroke-dasharray: 2 3; }
+.pen-lost { opacity: 0.55; }
+.pen-drop { stroke: var(--pen-cost); stroke-width: 3; }
+.pen-dot { fill: var(--pen-cost); stroke: var(--pen-bg); stroke-width: 2; }
+.pen-cursor { stroke: var(--pen-ink); stroke-width: 1; stroke-dasharray: 2 3; }
+
+/* ---- comparison table ------------------------------------------------- */
+.pen-scroll { overflow-x: auto; margin-bottom: 16px; }
+.pen .pen-matrix { width: 100%; min-width: 620px; border-collapse: collapse; font-size: 13px; font-variant-numeric: tabular-nums; }
+.pen .pen-matrix th,
+.pen .pen-matrix td { padding: 0; border: 0; border-bottom: 1px solid var(--pen-line); text-align: right; vertical-align: middle; }
+.pen .pen-matrix thead th { padding: 0 10px 8px; font-weight: 500; color: var(--pen-muted); background: none; }
+.pen .pen-matrix th:first-child { text-align: left; padding-left: 0; }
+.pen .pen-matrix td {
+  min-width: 72px;
+  height: 40px;
+  padding: 0 10px;
+  background: color-mix(in srgb, var(--pen-cost) var(--loss), var(--pen-bg));
+}
+.pen .pen-matrix td.is-heavy { color: #ffffff; }
+.pen .pen-matrix tbody tr { cursor: pointer; }
+.pen .pen-rowbtn { width: 100%; min-height: 40px; padding: 0 10px 0 8px; border: 0; border-left: 3px solid transparent; background: none; text-align: left; font-weight: 400; }
+.pen .pen-matrix tr:hover .pen-rowbtn { border-left-color: var(--pen-mid); }
+.pen .pen-matrix tr.is-on .pen-rowbtn { border-left-color: var(--pen-ink); font-weight: 500; }
+
+@media (max-width: 600px) {
+  .pen:not([data-layout]) { padding: 14px; }
+  .pen:not([data-layout]) .pen-control-label { flex-basis: 100%; }
+  .pen:not([data-layout]) .pen-control input[type="range"] { flex: 1 1 120px; }
+  .pen-score-tile dd,
+  .md-typeset .pen-score-tile dd { font-size: 20px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .pen-bar i,
+  .pen .pen-tab,
+  .pen .pen-choice { transition: none; }
+}

@@ -1,5 +1,6 @@
 ---
-description: Python and Rust API reference for SEDMetrics sound event detection metrics.
+title: "SEDMetrics Python and Rust API"
+description: "Reference for SEDMetrics.eval, the lower-level Python functions and the sedmetrics-core Rust crate for sound event evaluation."
 ---
 
 # SEDMetrics API reference
@@ -20,6 +21,11 @@ metrics=None, recordings=None, scores=None, alerts=None, metric_options=None,
 | `mode="probability"` | Aligned targets and probabilities | Brier result |
 | `mode="streaming"` | Events, durations, class IDs, and CREATE alerts | Experimental streaming statistics |
 
+The first two arguments change meaning with the mode. In probability mode,
+`references` holds the targets and `scores=` the probabilities. In aligned frame
+mode, `references` holds Boolean labels and `scores=` the frame scores.
+Streaming mode takes the alerts through `alerts=`.
+
 For event metrics, `metrics=[...]` returns a dictionary of results and
 `metric_options` maps metric names to option dictionaries. In aligned frame mode,
 `metrics` selects scalar fields while retaining counts and configuration.
@@ -34,7 +40,8 @@ Event-based frame mode returns all its classwise and aggregate metrics.
 - `sedmetrics.frame.brier` evaluates aligned probabilities and soft targets.
 - `sedmetrics.psds.psds` and `sedmetrics.psds.pipsds` evaluate score tracks.
 - `sedmetrics.experimental.streaming.evaluate` evaluates CREATE alert logs.
-- `sedmetrics.report.evaluate` constructs a JSON-compatible event/segment report.
+- `sedmetrics.report.evaluate` constructs a JSON-compatible report of event and
+  segment metrics, plus PSDS when `scores=` is supplied.
 
 See each [metric specification](choosing-metrics.md) for parameters, tie
 handling, aggregation, and undefined values. Results are structured objects or

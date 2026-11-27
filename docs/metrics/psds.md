@@ -1,12 +1,22 @@
 ---
-description: Polyphonic sound detection score, intersection criteria, profiles and operating curves.
+title: "PSDS: polyphonic sound detection score"
+description: "PSDS formulas, DTC, GTC and cross-trigger criteria, PSDS1 and PSDS2 profiles, penalties and parity with sed_scores_eval."
+faq:
+  - q: "What is the difference between PSDS1 and PSDS2?"
+    a: "PSDS1 requires 70% on both overlap criteria and has no cross-trigger term. PSDS2 requires 10%, counts cross-triggers from 30% overlap and weights them by 0.5."
+  - q: "Does PSDS depend on a decision threshold?"
+    a: "No. Distinct score values are evaluated as operating points and the score integrates over them."
+  - q: "What does alpha_st do?"
+    a: "It subtracts the standard deviation of the true-positive rate across classes, so uneven performance lowers the score. The default is 1.0."
 ---
 
 # PSDS: polyphonic sound detection score
 
+The polyphonic sound detection score (PSDS) rates a sound event detector across its decision thresholds. At each one it checks how much of every detection lies on a reference and how much of every reference is covered. The score is the normalised area under the curve of effective true-positive rate against false positives.
+
 Specification identifier: `psds/1`.
 
-Status: **implemented** for the intersection-based DTC/GTC/CTTC criteria.
+Status: implemented for the intersection-based DTC/GTC/CTTC criteria.
 Parity with `sed_scores_eval` 0.0.4 is tested, including per-class curves.
 
 Sources: Bilen et al., *A Framework for the Robust Evaluation of Sound Event
@@ -15,9 +25,35 @@ Detection*, ICASSP 2020, <https://arxiv.org/abs/1910.08440>; Ebbers et al.,
 <https://arxiv.org/abs/2201.13148>; the `sed_scores_eval` 0.0.4 implementation
 as the reference oracle; DCASE Task 4 PSDS1/PSDS2 profiles.
 
+## What does PSDS penalise?
+
+PSDS sweeps every threshold and asks, at each one, which detections are mostly
+inside a reference and which references are mostly covered. The score is the area
+under the resulting curve, so a penalty is area lost: the hatched region. In
+the formulas, red terms push the score down.
+
+<div class="pen" data-figure="psds"></div>
+
+| Mistake | PSDS1 (70% / 70%) | PSDS2 (10% / 10%, cross-triggers) |
+| --- | --- | --- |
+| Detection too long or too short | Lost once less than 70% overlaps | Tolerated down to 10% |
+| Hole in a detection | Free until covered share drops below 70% | Free until below 10% |
+| False alarm above the true detection's score | Area left of its false-positive rate is lost | Same |
+| One class much worse than another | Standard deviation across classes is subtracted | Same |
+| False detection on another class's event | An ordinary false positive | A false positive plus a cross-trigger charge |
+
+!!! warning "The lowest threshold is an operating point too"
+
+    At a threshold at or below every score, each recording becomes one long
+    detection per class. That is at most one false positive per recording,
+    however long the recording is. An
+    always-on detector can therefore score well when the audio sits in few, long
+    recordings and an event covers at least `dtc_threshold` of its clip. Try
+    *Always-on detector* above, and report how the audio was split.
+
 ## 1. Name, status, input representation
 
-PSDS measures detection quality **independently of a chosen threshold** by
+PSDS measures detection quality independently of a chosen threshold by
 sweeping over the score range and integrating the resulting PSD-ROC
 envelope. It is an established metric; the specific parameter sets are branded
 as PSDS1 and PSDS2.
@@ -36,51 +72,87 @@ Inputs:
   and each track must contain every evaluated class. Partial coverage and
   omitted tracks now raise an error; callers using previous versions must supply
   complete tracks. No implicit values are inserted.
-- The scored classes and the referenced classes must be the **same set**, and
+- The scored classes and the referenced classes must be the same set, and
   every scored class needs at least one reference event.
 
 ## 2. Definition
 
-At a threshold `τ`, the detections of a class in a clip are the maximal runs of
-frames with `score >= τ`; a run `[t_on, t_off)` yields a detection
-`D = [boundaries[t_on], boundaries[t_off])`. There is no threshold list: every
-distinct score value is an operating point, and statistics are accumulated over
-all of them.
+At a threshold $\tau$, the detections of class $c$ in a clip are the maximal
+runs of frames with score $\ge \tau$; a run $[t_{\text{on}}, t_{\text{off}})$
+yields a detection $D$ between those frame boundaries. There is no threshold
+list: every distinct score value is an operating point, and statistics are
+accumulated over all of them.
 
-Rounded comparisons (`round_d` = round half-to-even to `d` decimals, `d = 6`
-by default):
+!!! deviation "Current behaviour: scores are 32-bit floats"
 
-```
-I(D, G) = max(0, min(D.off, G.off) - max(D.on, G.on))
+    The binding converts every score to `f32` before thresholding. Two scores
+    closer than that resolution become one operating point: in a two-frame
+    example, `0.5` and `0.500000001` score 0.0 where `0.5` and `0.6` score 1.0.
+    A finite value beyond the `f32` range, such as `1e39`, is rejected as
+    non-finite.
 
-DTC(D) = Σ_{G ∈ same-class refs} I(D, G)  >=  dtc_threshold · |D|
-GTC(G) = Σ_{D : DTC(D)} I(D, G)          >=  gtc_threshold · |G|
-CT(D, k) = ¬DTC(D) ∧ Σ_{H ∈ refs of class k} I(D, H) >= cttc_threshold · |D|
+With the intersection of a detection and a reference
 
-TP_c(τ) = #{G of class c : GTC(G)}
-FP_c(τ) = #{D of class c} - #{D of class c : DTC(D)}
-CT_c,k(τ) = #{D of class c : CT(D, k)}
+$$
+I(D, G) = \max\bigl(0,\; \min(D_{\text{off}}, G_{\text{off}}) - \max(D_{\text{on}}, G_{\text{on}})\bigr)
+$$
 
-TPR_c(τ) = TP_c(τ) / n_ref_c
-FPR_c(τ) = FP_c(τ) / Σ_recordings duration
-CTR_c,k(τ) = CT_c,k(τ) / max(Σ_{G ∈ k} |G|, 1e-12)
-eFPR_c(τ) = ( FPR_c(τ) + alpha_ct · mean_{k ≠ c} CTR_c,k(τ) ) · unit
-```
+the three criteria are, with $\mathcal{G}_c$ the references of class $c$ in the clip:
 
-with `unit` = 1, 60 or 3600 for second, minute or hour.
+$$
+\mathrm{DTC}(D):\quad \sum_{G \in \mathcal{G}_c} I(D, G) \;\ge\; \rho_{\text{DTC}}\,\lvert D \rvert
+$$
+
+$$
+\mathrm{GTC}(G):\quad \sum_{D \,:\, \mathrm{DTC}(D)} I(D, G) \;\ge\; \rho_{\text{GTC}}\,\lvert G \rvert
+$$
+
+$$
+\mathrm{CT}_{c,k}(D):\quad \neg\,\mathrm{DTC}(D) \;\wedge\;
+\sum_{H \in \mathcal{G}_k} I(D, H) \;\ge\; \rho_{\text{CTTC}}\,\lvert D \rvert
+$$
+
+Both sides of every comparison are rounded half-to-even to `time_decimals`
+places (6 by default).
+
+Counts and rates. $TP_c(\tau)$ is the number of references of class $c$
+that satisfy GTC, $FP_c(\tau)$ the number of its detections that fail DTC, and
+$CT_{c,k}(\tau)$ the number that cross-trigger on class $k$. With $N_c$
+references of class $c$, $T$ the total audio duration in seconds, $L_k$ the total
+reference duration of class $k$, $C$ classes and $U \in \{1, 60, 3600\}$ for
+second, minute or hour:
+
+$$
+r_c(\tau) = \frac{TP_c(\tau)}{N_c}
+$$
+
+$$
+e_c(\tau) = U \left( \cost{\frac{FP_c(\tau)}{T}} +
+\cost{\frac{\alpha_{\text{CT}}}{C - 1} \sum_{k \ne c}
+\frac{CT_{c,k}(\tau)}{\max(L_k,\, 10^{-12})}} \right)
+$$
 
 Around this family of operating points:
 
-1. Per class, sort points by `(eFPR, TPR)`, keep the Pareto frontier (strictly
-   increasing TPR), keep the highest TPR of each duplicated eFPR, and truncate
-   at `max_efpr`.
-2. Take the union of all per-class eFPR values as the macro grid and evaluate
-   each class's frontier as a **right-continuous step function** (value at the
-   last knot `<= x`, 0 below the first knot, last value above the last knot).
-3. Macro TPR: `mean_c TPR_c(e) - alpha_st · std_c TPR_c(e)` (population std),
-   clamped at 0. Append a final point at `max_efpr`.
-4. `PSDS = (1 / max_efpr) · Σ_i TPR(e_i) · (e_{i+1} - e_i)` over the sorted
-   grid, using a left-endpoint staircase integral instead of a trapezoid rule.
+1. Per class, sort points by $(e, r)$, keep the Pareto frontier (strictly
+   increasing $r$), keep the highest $r$ of each duplicated $e$, and truncate at
+   $e_{\max}$ (`max_efpr`).
+2. Take the union of all per-class $e$ values as the macro grid
+   $e_1 < \dots < e_J$ and evaluate each class's frontier as a
+   right-continuous step function (value at the last knot $\le x$, 0 below
+   the first knot, last value above the last knot).
+3. With $\mu(e)$ and $\sigma(e)$ the mean and population standard deviation of
+   those values across classes, the effective true-positive rate is
+
+    $$
+    \tilde{r}(e) = \max\bigl(0,\; \mu(e) - \cost{\alpha_{\text{ST}}\,\sigma(e)}\bigr)
+    $$
+
+4. Integrate the staircase from the left endpoints, with $e_{J+1} = e_{\max}$:
+
+    $$
+    \mathrm{PSDS} = \frac{1}{e_{\max}} \sum_{j=1}^{J} \tilde{r}(e_j)\,\bigl(e_{j+1} - e_j\bigr)
+    $$
 
 This is the intersection-based formulation: no IoU, no one-to-one assignment,
 and a detection can be "relevant" while contributing to several references.
@@ -91,7 +163,7 @@ and a detection can be "relevant" while contributing to several references.
   detection inequality on the summed intersection; GTC is a per reference
   inequality over DTC-relevant detections. Multiple detections may contribute to
   one reference and one detection may contribute to several references.
-- Threshold equality **activates** a frame (`score >= τ`); a frame with a score
+- Threshold equality activates a frame (`score >= τ`); a frame with a score
   equal to τ belongs to the detection.
 - Every distinct score is an operating point, so ties are handled by evaluating
   the shared value once; a plateau of equal scores is one detection.
@@ -114,17 +186,16 @@ and a detection can be "relevant" while contributing to several references.
 
 ## 5. Defaults and profiles
 
-The defaults are the **PSDS1** profile, with the DCASE 2023/2024 settings:
+The defaults are the PSDS1 profile, with the DCASE 2023/2024 settings:
 
 | | DTC | GTC | CTTC | alpha_ct | alpha_st | max eFPR |
 | --- | --- | --- | --- | --- | --- | --- |
-| PSDS1 | 0.7 | 0.7 | — | 0.0 | 1.0 | 100 / hour |
+| PSDS1 | 0.7 | 0.7 | none | 0.0 | 1.0 | 100 / hour |
 | PSDS2 | 0.1 | 0.1 | 0.3 | 0.5 | 1.0 | 100 / hour |
 
-`alpha_st` must be passed as 1.0. `sed_scores_eval` defaults `alpha_st` to 0.0,
-and the local `YOLIO-WOLRD/src/metrics.py` wrapper also defaults it to 0.0
-while describing the result as PSDS1. That differs from the DCASE PSDS1 definition.
-Parity tests here pass every parameter explicitly.
+The default here is `alpha_st = 1.0`, as the DCASE profiles require.
+`sed_scores_eval` defaults it to 0.0, so a call that relies on that default does
+not compute DCASE PSDS1. Parity tests here pass every parameter explicitly.
 
 `cttc_threshold` must be set exactly when `alpha_ct > 0`; the implementation
 rejects the mismatched combinations that `sed_scores_eval` also rejects.
@@ -146,7 +217,7 @@ Frontier: `(0, 0)` and `(0.25, 1)`. The staircase integral from 0 to 1 is
 `1 · (1 - 0.25) = 0.75`, so `PSDS = 0.75`.
 
 Note that the second threshold produces no true positive: the criterion rewards
-a detection whose intersection with references covers half of the **detection**
+a detection whose intersection with references covers half of the detection
 length, not half of the reference.
 
 ## 7. Verification and complexity
@@ -161,9 +232,9 @@ length, not half of the reference.
   environment is unavailable.
 - Rust-level tests cover the hand example, the no-detection case, cross-trigger
   accounting, malformed tracks, configuration conflicts and boundedness.
-- Complexity: per class and clip, `U` distinct thresholds are scanned over `T`
-  frames and `R` references, i.e. `O(U · T + U · T · R)` per class/clip, with
-  `U <= T`. This is a straightforward formulation. The reference implementation
+- Complexity: per class and clip, $U$ distinct thresholds are scanned over $T$
+  frames and $R$ references, i.e. $O(UT + UTR)$ per class and clip, with
+  $U \le T$. This is a straightforward formulation. The reference implementation
   uses an incremental method; relative performance has not been benchmarked.
 
 ## Limitations

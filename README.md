@@ -267,14 +267,15 @@ covered by the Python tests.
 | Tier | Platforms | Status |
 | --- | --- | --- |
 | 1 | macOS arm64, Linux x86_64 | Built and tested |
-| 2 | Linux aarch64, Windows x86_64 | Expected to build, untested |
+| 2 | Windows x86_64 | Built and tested by a CI job |
+| 2 | Linux aarch64 | Expected to build, untested |
 | — | 32-bit targets, musl wheels | Not supported |
 
 CPython 3.10-3.13 via the `abi3-py310` stable ABI, so one wheel per platform
 works across those versions. Rust 1.85+ is required to build from source.
 
-CI (`.github/workflows/ci.yml`) runs the Rust checks, the Python suite on Linux
-and macOS, and the reference-parity suite on Linux. See GitHub Actions for the
+CI (`.github/workflows/ci.yml`) runs the Rust checks, the Python suite on Linux,
+macOS and Windows, and the reference-parity suite on Linux. See GitHub Actions for the
 status of the latest run.
 
 ## License

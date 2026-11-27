@@ -1,13 +1,19 @@
 ---
-description: Load URBAN-SED and AudioSet Strong annotations into SEDMetrics datasets.
+title: "URBAN-SED and AudioSet Strong adapters"
+description: "Load URBAN-SED v2.0.0 or AudioSet Strong annotations into a validated SEDMetrics dataset with stable class and recording ids."
+faq:
+  - q: "Are clips without events kept?"
+    a: "Yes. They stay in the dataset durations, so false alarms on them and their exposure still count."
 ---
 
 # Dataset adapters
 
+Dataset adapters load URBAN-SED v2.0.0 and AudioSet Strong annotations into a validated `sedmetrics.Dataset` with class names, recording durations and integer ids.
+
 Adapters turn on-disk reference data into a `sedmetrics.Dataset`: validated
 reference events with stable integer ids, recording durations, a class
-vocabulary and human-readable names. They are deliberately separate from the
-metrics, so the core never depends on pandas, pyarrow or a file layout.
+vocabulary and human-readable names. They are separate from the metrics, so the
+core never depends on pandas, pyarrow or a file layout.
 
 ```python
 import sedmetrics as sm
@@ -27,6 +33,11 @@ duration, a non-finite timestamp or an unknown split raises `ValueError` with
 the file and row. The only files ignored are macOS AppleDouble resource forks
 (`._*.txt`, `.DS_Store`), which are archive metadata rather than annotations.
 
+!!! deviation "Current behaviour: null parquet fields"
+
+    A null `audio_len` or `raw_text` in an AudioSet row raises a `TypeError`
+    that names neither the file nor the row.
+
 ## URBAN-SED v2.0.0
 
 Input: the extracted release directory (containing `annotations/`) or the
@@ -35,17 +46,20 @@ official `URBAN-SED_v2.0.0.tar.gz`.
 - Annotation files are `annotations/<split>/<clip>.txt` with tab-separated
   `onset<TAB>offset<TAB>label` rows; the loader accepts `train`, `test`,
   `validate` or `all`.
-- Recording ids follow sorted clip names, and `recording_names` holds the clip
-  stem, so they are stable across runs and independent of filesystem order. A
-  clip stem that appears in two splits is rejected.
+- Recording ids follow the sorted `split/clip` key, so within one split they
+  follow clip names, and with `split="all"` they follow split first.
+  `recording_names` holds the clip stem. Without `limit`, ids are stable across
+  runs and independent of filesystem order. A clip stem that appears in two
+  splits is rejected.
 - The class vocabulary is the sorted set of labels in the loaded cohort; ids can
   therefore shift when `limit` is used.
-- **Clips without events are kept.** They appear in `dataset.durations` and can
+- Clips without events are kept. They appear in `dataset.durations` and can
   be predicted on; that matters for false-alarm and exposure analysis.
 - Duration: `clip_duration` (default 10 s) is a documented convention, not read
   from the audio. Some URBAN-SED rows end at `10.000000000000002` for a 10 s
   clip. If an annotation ends later than the nominal duration, the clip duration
-  is extended to that offset instead of truncating the annotation.
+  is extended to that offset instead of truncating the annotation. An offset more
+  than 1 s past the duration raises.
 - Reading the `.tar.gz` streams the archive and stops at the end of the
   `annotations/` tree, so the 6.6 GB of audio is not decompressed. This relies
   on the official layout, which stores annotations before audio; extract the
@@ -66,7 +80,7 @@ Used columns:
 
 Mapping decisions:
 
-- **Classes are keyed by ontology id (`/m/...`), not display name.** Two ids can
+- Classes are keyed by ontology id (`/m/...`), not display name. Two ids can
   share a display name; `Dataset.class_id` then refuses the ambiguous name and
   asks for the id.
 - Recording ids follow file order and row order; names are
@@ -77,6 +91,12 @@ Mapping decisions:
   original segment timeline, and roughly 10 % of the sampled rows end up to
   0.43 s past the decoded audio; truncating them would discard labelled audio.
   A row more than 1 s past its duration is treated as corrupt and raises.
+
+!!! deviation "Current behaviour: the 1 s limit moves"
+
+    Both loaders check each offset, in file order, against the duration already
+    extended by earlier rows. On a 10 s clip, offsets `10.9`, `11.8`, `12.7`
+    are all accepted and the duration becomes 12.7 s, while `12.7` alone raises.
 - Rows without a `Strong events:` line are empty clips and are kept.
 
 ## Limits and subsampling
@@ -85,6 +105,11 @@ Both loaders accept `limit=<n>` to load the first `n` recordings. This is for
 smoke tests: because class ids are assigned from the loaded cohort, a limited
 dataset has a different vocabulary than the full one. Never compare results
 computed on different `limit` values.
+
+!!! deviation "Current behaviour: `limit` and URBAN-SED archives"
+
+    A directory is read in sorted name order, a `.tar.gz` in stored order. The
+    same `limit` can therefore select different clips from the two.
 
 ## Verification status
 

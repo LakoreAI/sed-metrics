@@ -5,6 +5,8 @@ on:
     branches: [main]
     paths:
       - "docs/**"
+      - "overrides/**"
+      - "tools/mkdocs_hooks.py"
       - "mkdocs.yml"
       - ".github/workflows/docs.yml"
   workflow_dispatch:

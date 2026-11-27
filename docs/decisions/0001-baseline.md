@@ -1,4 +1,9 @@
-# ADR 0001 — Project baseline: license, platforms, CI, metric order
+---
+title: "ADR 0001: project baseline"
+description: "Decision record for the SEDMetrics license, supported platforms, continuous integration and the order in which metrics were built."
+---
+
+# ADR 0001: project baseline (license, platforms, CI, metric order)
 
 Status: historical baseline recorded 2026-11-27. The maintainer approved
 Apache-2.0 for publication. The experimental streaming implementation and its
@@ -48,6 +53,9 @@ warnings`, core tests), `python` (wheel build + full Python suite on Linux
 repository).
 
 See GitHub Actions for the current status of the workflow.
+
+Update, 2026-11-27: the `python` job now also runs on a Windows runner. Windows
+stays tier 2.
 
 ### 4. Metric order
 

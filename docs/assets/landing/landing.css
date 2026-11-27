@@ -1,0 +1,135 @@
+/* Page CSS for the home page: only what sits inside a visual or that the kit does not provide.
+   The kit (kit/system.css, kit/layout/layout.css) owns the page rhythm, type, buttons and nav. */
+.lab, .pen { --pen-muted: var(--p-muted); }
+.lab [hidden], .pen [hidden] { display: none !important; }
+
+/* ---- hero: the headline, then one control that drives the whole page's idea */
+.hero.sed-hero { height: auto; min-height: 0; padding-block: calc(var(--nav) + 40px) 0; }
+.sed-hero .grid.sed-hero__head { margin: 0; }
+.sed-hero__head { align-items: end; row-gap: var(--s-5); }
+.sed-hero h1 { margin: 0; font: var(--display-weight) clamp(40px, 2.6vw + 30px, 72px)/1.02 var(--font-display); letter-spacing: var(--display-tracking-xl); text-wrap: balance; }
+.sed-hero__side { display: grid; gap: var(--s-5); }
+.sed-hero__side > * { margin: 0; }
+.sed-hero .hero__lead { max-width: 46ch; color: var(--p-ink); }
+.sed-scrub { display: grid; gap: var(--s-4); margin-top: var(--s-6); padding: var(--s-5) var(--s-6); border: 1px solid #dcdcdc; border-radius: var(--r-lg); background: #fff; color: var(--p-ink); }
+.sed-scrub__control { display: grid; grid-template-columns: auto minmax(0, 1fr) 10ch; align-items: center; gap: var(--s-5); }
+.sed-scrub__control label { font-weight: 500; }
+.sed-scrub__control output { font: var(--display-weight) 24px/1 var(--font-display); letter-spacing: -0.02em; text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums; }
+/* the slider is a playhead: ink up to the chosen delay, a red grip */
+.sed-scrub input[type="range"] { -webkit-appearance: none; appearance: none; width: 100%; height: 32px; margin: 0; background: transparent; cursor: ew-resize; }
+.sed-scrub input[type="range"]::-webkit-slider-runnable-track { height: 4px; border-radius: 2px; background: linear-gradient(90deg, var(--p-ink) var(--at, 20%), #d4d4d4 var(--at, 20%)); }
+.sed-scrub input[type="range"]::-moz-range-track { height: 4px; border-radius: 2px; background: #d4d4d4; }
+.sed-scrub input[type="range"]::-moz-range-progress { height: 4px; border-radius: 2px; background: var(--p-ink); }
+.sed-scrub input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; width: 14px; height: 28px; margin-top: -12px; border: 0; border-radius: 3px; background: var(--p-accent); }
+.sed-scrub input[type="range"]::-moz-range-thumb { width: 14px; height: 28px; border: 0; border-radius: 3px; background: var(--p-accent); }
+.sed-scrub input[type="range"]:focus-visible { outline: 2px solid var(--p-accent); outline-offset: 4px; }
+.sed-scrub__timeline { min-height: 104px; }
+.sed-scrub .pen-scores { grid-template-columns: repeat(6, minmax(0, 1fr)); }
+.sed-scrub__note { margin: 0; min-height: 24px; font-size: 15px; color: var(--p-ink); }
+@media (max-width: 1023px) {
+  .sed-hero__head > * { grid-column: 1 / -1; }
+  .sed-scrub .pen-scores { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+@media (max-width: 639px) {
+  .hero.sed-hero { padding-block: calc(var(--nav) + 16px) 0; }
+  .sed-hero__head { row-gap: var(--s-3); }
+  .sed-hero__side { gap: var(--s-4); }
+  .sed-scrub { gap: var(--s-2); margin-top: var(--s-4); padding: var(--s-3); }
+  .sed-scrub__control { grid-template-columns: minmax(0, 1fr) auto; gap: 0 var(--s-3); }
+  .sed-scrub__control label { font-size: 14px; }
+  .sed-scrub__control output { font-size: 18px; }
+  .sed-scrub__control input[type="range"] { grid-column: 1 / -1; order: 3; height: 40px; }
+  .sed-scrub__timeline { min-height: 72px; }
+  .sed-scrub__note { font-size: 14px; min-height: 42px; }
+}
+
+/* scores sit directly on their window: no tile boxes inside it */
+.lab .pen-scores { gap: var(--s-4) var(--s-5); border: 0; border-radius: 0; background: none; overflow: visible; }
+.lab .pen-score-tile { padding: 0; background: none; }
+
+/* ---- the app window: mistakes on the left, the scored events on the right */
+.sed-head { align-items: start; }
+.sed-head h2, .sed-head p { margin: 0; }
+.sed-app { display: grid; grid-template-columns: minmax(0, 3fr) minmax(0, 9fr); margin-top: var(--s-7); background: #fff; border: 1px solid #dcdcdc; border-radius: var(--r-lg); overflow: hidden; }
+.sed-app__list { display: flex; flex-direction: column; padding: var(--s-2); border-right: 1px solid #e4e4e4; min-height: 0; }
+.lab-item { flex: 1 1 0; min-height: 40px; max-height: 56px; padding: 0 var(--s-3); border: 0; border-radius: var(--r-sm); background: none; color: var(--p-ink); font: 400 15px/1.3 var(--font-text); text-align: left; cursor: pointer; transition: background-color 140ms; }
+.lab-item:hover { background: var(--p-surface); }
+.lab-item[aria-pressed="true"] { background: var(--p-ink); color: #fff; font-weight: 500; }
+.lab-item:focus-visible { outline: 2px solid var(--p-accent); outline-offset: -2px; }
+.sed-app__open { display: flex; flex-direction: column; justify-content: space-between; gap: var(--s-5); padding: var(--s-6); min-width: 0; }
+.sed-app__title h3 { margin: 0 0 var(--s-1); font: 500 var(--t-lead)/1.3 var(--font-text); }
+.sed-app__title p { margin: 0; color: var(--p-muted); }
+.sed-app__timeline { min-height: 120px; }
+.sed-app .pen-scores { grid-template-columns: repeat(3, minmax(0, 1fr)); margin: 0; }
+@media (max-width: 1023px) {
+  .sed-app { grid-template-columns: minmax(0, 1fr); }
+  .sed-app__list { flex-direction: row; flex-wrap: wrap; gap: var(--s-1); border-right: 0; border-bottom: 1px solid #e4e4e4; }
+  .lab-item { flex: 0 0 auto; min-height: 36px; }
+  .sed-app__open { padding: var(--s-4); gap: var(--s-4); }
+}
+@media (max-width: 639px) {
+  .sed-head { row-gap: var(--s-3); }
+  .sed-app { margin-top: var(--s-5); }
+  .lab-item { font-size: 13px; min-height: 32px; padding: 0 var(--s-2); }
+  .sed-app__open { padding: var(--s-3); gap: var(--s-3); }
+  .sed-app__title p { font-size: 14px; }
+  .sed-app .pen-score-tile dd { font-size: 18px; }
+}
+
+/* ---- metric cards: each panel is as tall as its figure ---------------- */
+#metrics .card h3 a { color: inherit; text-decoration: none; }
+.sed-panel { height: auto; background: #fff; border: 1px solid #dcdcdc; padding: var(--s-3) var(--s-4); }
+.sed-panel .pen { display: grid; gap: var(--s-2); height: 136px; grid-template-rows: auto minmax(0, 1fr); align-items: end; }
+.sed-panel .pen-scores { grid-template-columns: minmax(0, 1fr); border: 0; background: none; border-radius: 0; }
+.sed-panel .pen-score-tile { display: grid; grid-template-columns: auto auto 1fr; align-items: center; gap: var(--s-3); padding: 0; background: none; }
+.sed-panel .pen-score-tile dd { font-size: 20px; }
+.sed-panel .pen-bar { width: 100%; max-width: 160px; justify-self: end; margin: 0; }
+.sed-panel .pen-plot { --pen-chart-max: 100; }
+@media (max-width: 639px) {
+  .sed-panel { padding: var(--s-2) var(--s-3); }
+  .sed-panel .pen { height: 120px; gap: var(--s-1); }
+  .sed-panel .pen-score-tile dd { font-size: 16px; }
+  .sed-panel .pen-plot { --pen-chart-max: 88; }
+}
+
+/* ---- formulas and code ------------------------------------------------ */
+.sed-copy { display: grid; gap: var(--s-5); align-content: start; }
+.sed-copy > * { margin: 0; }
+.sed-code { padding: var(--s-4) var(--s-5); border-radius: var(--r-md); background: var(--p-surface); font: 400 13px/1.7 var(--font-mono); overflow-x: auto; max-width: 100%; }
+.sed-code .c-k { font-weight: 500; }
+.sed-code .c-n { color: #b4231b; }
+.sed-code .c-p { color: var(--p-muted); }
+.sed-formulas .katex .cost { color: #b4231b; }
+.sed-formulas { display: grid; margin: 0; }
+.sed-formulas > div { display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); align-items: center; gap: var(--s-4); min-height: 108px; border-bottom: 1px solid var(--line); }
+.sed-formulas > div:first-child { border-top: 1px solid var(--p-ink); }
+.sed-formulas dt { font-weight: 500; }
+.sed-formulas dd { margin: 0; min-width: 0; overflow-x: auto; overflow-y: hidden; }
+.sed-formulas .katex { font-size: 1.15em; }
+.sed-formulas .katex-display { margin: 0; padding-block: var(--s-2); }
+@media (max-width: 639px) {
+  .sed-formulas { margin-top: var(--s-5); }
+  .sed-formulas > div { grid-template-columns: minmax(0, 1fr); gap: 0; min-height: 76px; padding-block: var(--s-1); }
+  .sed-formulas dt { font-size: 14px; }
+  .sed-formulas .katex { font-size: 0.95em; }
+  /* one phone screen: the formulas stay, the code sample is on the getting-started page */
+  #formulas .sed-code { display: none; }
+  #formulas .sed-copy { gap: var(--s-4); }
+}
+
+/* ---- section rhythm ---------------------------------------------------
+   The kit makes every section one or two screens tall, which left large empty
+   bands here. After the hero, a section is as tall as its content. */
+main > section.section:not(.hero),
+footer.closing { height: auto; min-height: 0; }
+main > section.section:not(.hero) { padding-block: 72px; }
+footer.closing { padding-block: 72px var(--s-6); }
+footer.closing > .wrap { grid-template-rows: auto auto; row-gap: var(--s-9); }
+#penalties .sed-app { flex: none; min-height: 520px; }
+html { scroll-padding-top: var(--nav); }
+@media (max-width: 639px) {
+  main > section.section:not(.hero) { padding-block: 48px; }
+  footer.closing { padding-block: 48px var(--s-6); }
+  footer.closing > .wrap { row-gap: var(--s-7); }
+  #penalties .sed-app { min-height: 0; }
+}

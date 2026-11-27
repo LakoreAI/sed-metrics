@@ -1,18 +1,45 @@
 ---
-description: Segment-based sound event detection F1 and substitution, deletion and insertion error rates.
+title: "Segment-based F1 and error rate for SED"
+description: "Definition and formulas of segment-based precision, recall, F1 and the substitution, deletion and insertion error rate."
+faq:
+  - q: "What segment length should I use?"
+    a: "The default is 1 s, as in sed_eval-style DCASE results. Other work uses 0.5 s or 0.1 s, so report the value."
+  - q: "What is the segment error rate?"
+    a: "Substitutions plus deletions plus insertions, divided by the number of active reference segments. It can exceed 1."
+  - q: "Does segment F1 punish a split detection?"
+    a: "Only when the hole leaves a segment without any part of the detection."
 ---
 
 # Segment-based precision, recall, F1 and error rate
 
+Segment-based metrics cut each recording into fixed segments, 1 s by default, and check class by class whether the reference and the prediction are active in each one. They report precision, recall, F1 and an error rate made of substitutions, deletions and insertions.
+
 Specification identifier: `segment_f1/1`.
 
-Status: **implemented**. Established metric family; parity with `sed_eval` 0.2.1
+Status: implemented. Established metric family; parity with `sed_eval` 0.2.1
 is tested.
 
 Source: Mesaros, Heittola and Virtanen, *Metrics for Polyphonic Sound Event
 Detection*, Applied Sciences 6(6):162, 2016,
 <https://doi.org/10.3390/app6060162>, and the segment-based evaluation in
 `sed_eval` 0.2.1.
+
+## What do segment metrics penalise?
+
+Time is cut into fixed segments and each segment is scored as active or silent.
+An error smaller than the segment it falls in can cost nothing at all. A black
+cell is a hit; a red cell is a false positive or a miss. In the formulas, red
+terms are the errors.
+
+<div class="pen" data-figure="segment_f1"></div>
+
+| Mistake | Effect |
+| --- | --- |
+| Boundary shifted inside the same segment | None |
+| Boundary shifted across a segment edge | One more FP (insertion) or FN (deletion) segment |
+| Hole in a detection | None while each segment still holds some of the detection |
+| Two events merged across a gap | Segments lying wholly in the gap become false positives |
+| Wrong class in an active segment | One substitution in the error rate, but one FP and one FN in F1 |
 
 ## 1. Input representation
 
@@ -24,36 +51,49 @@ rejected, never clipped silently.
 
 ## 2. Definition
 
-A segment is `S_k = [k·L, (k+1)·L)` for segment length `L` (`segment_length`,
-default 1 s). Segment `k` is **active for class c** in a reference or prediction
-set when at least one event of class c overlaps `S_k`. In indices this is
-exactly
+A segment is $S_k = [kL,\,(k+1)L)$ for segment length $L$ (`segment_length`,
+default 1 s). Segment $k$ is active for class $c$ in a reference or prediction
+set when at least one event of class $c$ overlaps $S_k$. In indices the set of
+active segments is
 
-```
-start = floor(onset / L)
-end   = ceil(offset / L)
-active = {start, ..., end - 1}
-```
+$$
+A_c = \bigcup_{e \in E_c}
+\Bigl\{ \Bigl\lfloor \tfrac{e_{\text{on}}}{L} \Bigr\rfloor, \dots,
+\Bigl\lceil \tfrac{e_{\text{off}}}{L} \Bigr\rceil - 1 \Bigr\}
+$$
 
 so an event that only touches a boundary does not activate the neighbouring
 segment.
 
-For each segment with reference active-class count `n_ref`, predicted count
-`n_sys` and overlap `n_both`:
+!!! deviation "Current behaviour: inexact segment lengths"
 
-```
-TP += n_both
-FP += n_sys - n_both
-FN += n_ref - n_both
-S  += min(n_ref, n_sys) - n_both
-D  += max(0, n_ref - n_sys)
-I  += max(0, n_sys - n_ref)
-```
+    The division is done in binary floating point. When $L$ is not exact in
+    binary, a boundary can land one segment early: `[0.3, 0.4)` with `L = 0.1`
+    activates two segments, because `0.3 / 0.1` is `2.9999999999999996`.
+    `L = 0.5`, `1.0` and `2.0` are exact.
 
-with the sums taken over segments and then over recordings. Per class the same
-counts are accumulated for that class only. The evaluated window of a recording
-is its supplied duration, otherwise the latest event offset in that recording;
-activity beyond it is ignored.
+For each segment with reference active-class count $n_{\text{ref}}(k)$, predicted
+count $n_{\text{sys}}(k)$ and overlap $n_{\text{both}}(k)$:
+
+$$
+TP = \sum_k n_{\text{both}}, \qquad
+FP = \sum_k \bigl(n_{\text{sys}} - n_{\text{both}}\bigr), \qquad
+FN = \sum_k \bigl(n_{\text{ref}} - n_{\text{both}}\bigr)
+$$
+
+$$
+\cost{S} = \sum_k \bigl(\min(n_{\text{ref}}, n_{\text{sys}}) - n_{\text{both}}\bigr)
+$$
+
+$$
+\cost{D} = \sum_k \max(0,\; n_{\text{ref}} - n_{\text{sys}}), \qquad
+\cost{I} = \sum_k \max(0,\; n_{\text{sys}} - n_{\text{ref}})
+$$
+
+The sums run over segments and then over recordings. Per class the same counts
+are accumulated for that class only. The evaluated window of a recording is its
+supplied duration, otherwise the latest event offset in that recording; activity
+beyond it is ignored.
 
 ## 3. Matching and tie handling
 
@@ -72,18 +112,22 @@ can differ.
 
 Counts and units:
 
-- `n_reference` is the number of **active reference segments** (summed over
+- `n_reference` is the number of active reference segments (summed over
   classes), not the number of segments in the recording.
-- `error_rate = (S + D + I) / n_reference`; it can exceed 1.
+- The error rate can exceed 1:
+
+$$
+ER = \frac{\cost{S + D + I}}{N_{\text{ref}}}
+$$
 - `substitution_rate`, `deletion_rate`, `insertion_rate` divide each count by
   the same `n_reference`.
 
 A substitution is one segment in which both sides are active but no class
 overlaps, yet it produces two class-level errors, so
 
-```
-FP + FN = 2·S + D + I
-```
+$$
+FP + FN = 2S + D + I
+$$
 
 Every rate and ratio is `None` when its denominator is zero: no reference
 segments means no recall and no error rate; no predicted segments means no
@@ -131,9 +175,11 @@ F1 `2/3`.
   implementation uses the `None`/zero policy in §4. The parity helper asserts
   the divergence explicitly instead of skipping it.
 - Complexity: ranges are merged per (recording, class), then one sweep per
-  recording over range boundaries; time is `O(E log E + R log R)` in events and
-  ranges, memory `O(E)`. No dense `[segments × classes]` matrix is built, so
-  long recordings stay cheap.
+  recording over range boundaries; time is $O(E \log E + R \log R)$ in events and
+  ranges, memory $O(E)$. When durations are supplied, each recording's duration is
+  also found by a linear search, which adds a term quadratic in the number of
+  recordings. No dense `[segments × classes]` matrix is built, so long recordings
+  stay cheap.
 
 ## Limitations
 
@@ -141,4 +187,5 @@ F1 `2/3`.
   and so does this implementation.
 - Segment length must be uniform across the evaluated set; per-recording
   resolutions are not supported.
-- No frame metrics on an arbitrary score grid yet, and no soft labels.
+- Events only. For score grids see [frame metrics](frame_events.md); soft labels
+  are not supported here.

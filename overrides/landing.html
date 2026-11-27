@@ -1,0 +1,235 @@
+<!doctype html>
+<!-- The documentation home page. A standalone page built with the kit in docs/assets/landing/kit
+     (see DESIGN.md); it does not extend the Material templates used by the rest of the site. -->
+<html lang="en" data-type="software" data-radius="sharp" data-buttons="solid" data-motion>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>SEDMetrics: sound event detection metrics for Python and Rust</title>
+<meta name="description" content="{{ page.meta.description }}">
+<meta name="author" content="{{ config.site_author }}">
+<meta name="site-kind" content="software">
+<meta name="page-type" content="software">
+{% if page.canonical_url %}<link rel="canonical" href="{{ page.canonical_url }}">{% endif %}
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="{{ config.site_name }}">
+<meta property="og:title" content="Sound event detection metrics for Python and Rust">
+<meta property="og:description" content="{{ page.meta.description }}">
+<meta property="og:url" content="{{ page.canonical_url }}">
+<meta property="og:image" content="{{ config.site_url }}assets/images/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<script type="application/ld+json">{{ page.meta.jsonld | safe }}</script>
+<link rel="icon" href="{{ 'assets/images/mark.svg' | url }}">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Host+Grotesk:wght@400..700&family=JetBrains+Mono:wght@400..500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="{{ 'assets/landing/kit/system.css' | url }}">
+<link rel="stylesheet" href="{{ 'assets/landing/kit/motion/motion.css' | url }}">
+<link rel="stylesheet" href="{{ 'assets/landing/kit/layout/layout.css' | url }}">
+<link rel="stylesheet" href="{{ 'assets/vendor/katex/katex.min.css' | url }}">
+<link rel="stylesheet" href="{{ 'assets/stylesheets/penalty.css' | url }}">
+<style>
+:root {
+  --p-bg: #ffffff; --p-surface: #f2f2f2; --p-ink: #0a0a0a; --p-muted: #5c5c5c;
+  --p-accent: #d92b21; --p-accent-ink: #ffffff; --p-action: #d92b21; --p-action-ink: #ffffff;
+  --p-inv-bg: #000000; --p-inv-surface: #010101; --p-inv-ink: #ffffff; --p-inv-muted: #a3a3a3;
+  --p-inv-accent: #d92b21; --p-inv-accent-ink: #ffffff; --p-inv-action: #d92b21; --p-inv-action-ink: #ffffff;
+  --font-display: "Host Grotesk", system-ui, sans-serif;
+  --font-text: "Host Grotesk", system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+  --display-weight: 500;
+  --display-tracking: -0.035em;
+  --display-tracking-xl: -0.04em;
+}
+</style>
+<link rel="stylesheet" href="{{ 'assets/landing/landing.css' | url }}">
+</head>
+<body>
+<!-- type: software
+     deal: hero centred, nav nav-centre (nav-cards was dealt; it needs photographs, so it was dealt
+     again), close close-type, footer footer-dark, rhythm surface-pairs, buttons solid, mark ring,
+     radius sharp, palette white-signal-red, type host. No shader effect, moment or scene. -->
+<header class="nav nav--centre">
+  <div class="wrap nav__bar">
+    <a class="nav__logo" href="#top"><span class="mark" data-mark="ring" aria-hidden="true"></span>SEDMetrics</a>
+    <nav class="nav__links" aria-label="Main">
+      <div class="nav__item"><a class="nav__link" href="{{ 'penalties/' | url }}">Penalties</a></div>
+      <div class="nav__item"><a class="nav__link" href="{{ 'choosing-metrics/' | url }}">Metrics</a></div>
+      <div class="nav__item"><a class="nav__link" href="{{ 'metrics/psds/' | url }}">PSDS</a></div>
+      <div class="nav__item"><a class="nav__link" href="{{ 'api/' | url }}">API</a></div>
+    </nav>
+    <div class="nav__actions">
+      <a class="nav__link" href="{{ config.repo_url }}">GitHub</a>
+      <a class="btn btn--primary" href="{{ 'getting-started/' | url }}">Get started</a>
+    </div>
+    <button class="nav__toggle" type="button" aria-expanded="false" aria-label="Menu">
+      <svg width="18" height="18" viewBox="0 0 18 18" aria-hidden="true"><path d="M2 5h14M2 13h14" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+    </button>
+  </div>
+</header>
+
+<main id="top">
+  <section class="hero sed-hero" aria-labelledby="hero-h">
+    <div class="wrap">
+      <div class="grid sed-hero__head">
+        <h1 class="span-6" id="hero-h">Sound event detection metrics</h1>
+        <div class="span-6 start-7 sed-hero__side">
+          <p class="hero__lead">Score event, segment, frame, PSDS, piPSDS, Brier and streaming metrics from Python or Rust. Delay a detector below and watch them disagree.</p>
+          <div class="btn-row">
+            <a class="btn btn--primary" href="{{ 'getting-started/' | url }}">Get started</a>
+            <a class="btn btn--secondary" href="{{ 'penalties/' | url }}">Compare metric penalties</a>
+          </div>
+        </div>
+      </div>
+      <div class="ui lab sed-scrub" data-figure="hero" data-layout="scrub">
+        <div class="sed-scrub__control">
+          <label for="delay">Delay every detection</label>
+          <input id="delay" type="range" min="0" max="40" step="1" value="8" data-lab-input>
+          <output for="delay" data-lab-output></output>
+        </div>
+        <div class="sed-scrub__timeline" data-lab-timeline></div>
+        <dl class="pen-scores" data-lab-scores></dl>
+        <p class="sed-scrub__note" data-lab-note aria-live="polite"></p>
+      </div>
+    </div>
+  </section>
+
+  <section class="section" id="penalties" aria-labelledby="penalties-h">
+    <div class="wrap">
+      <div class="grid grid--top sed-head">
+        <h2 class="span-6" id="penalties-h">One mistake, six scores</h2>
+        <p class="span-6 start-7">Pick a mistake to see its event F1, segment, frame and PSDS scores against the same three events. Red marks the share of a score that was lost. <a class="link" href="{{ 'penalties/' | url }}">Compare all nine</a></p>
+      </div>
+      <div class="ui lab sed-app fill" data-figure="matrix" data-layout="lab" data-row="split">
+        <div class="sed-app__list" data-lab-list role="group" aria-label="Mistakes"></div>
+        <div class="sed-app__open">
+          <div class="sed-app__title"><h3 data-lab-title>One event split</h3><p data-lab-detail>Speech arrives as two pieces with a 0.5 s hole.</p></div>
+          <div class="sed-app__timeline" data-lab-timeline></div>
+          <dl class="pen-scores" data-lab-scores></dl>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section ground-surface" id="metrics" aria-labelledby="metrics-h">
+    <div class="wrap">
+      <div class="section-head"><h2 id="metrics-h">Metrics for every output</h2></div>
+      <div class="grid">
+          <article class="card card--row card--open span-6">
+            <h3><a href="{{ 'metrics/event_f1/' | url }}">Event boundary matching</a></h3>
+            <p>An onset 0.4 s late counts as one miss and one false alarm.</p>
+            <div class="panel sed-panel"><div class="pen" data-figure="event_f1" data-layout="thumb" data-scenario="onset" data-frame="20" data-metric="f1" data-label="Event F1" data-view="timeline"></div></div>
+          </article>
+          <article class="card card--row card--open span-6">
+            <h3><a href="{{ 'metrics/segment_f1/' | url }}">Active segment counts</a></h3>
+            <p>A hole costs only the segments it empties.</p>
+            <div class="panel sed-panel"><div class="pen" data-figure="segment_f1" data-layout="thumb" data-scenario="split" data-frame="11" data-metric="f1" data-label="Segment F1" data-view="timeline"></div></div>
+          </article>
+          <article class="card card--row card--open span-6">
+            <h3><a href="{{ 'metrics/psds/' | url }}">Threshold sweep scores</a></h3>
+            <p>PSDS is the area under the curve; piPSDS takes the envelope.</p>
+            <div class="panel sed-panel"><div class="pen" data-figure="psds" data-layout="thumb" data-scenario="exposure" data-frame="3" data-metric="psds1" data-label="PSDS1" data-view="curve"></div></div>
+          </article>
+          <article class="card card--row card--open span-6">
+            <h3><a href="{{ 'streaming-protocol/' | url }}">Alert timing scores</a></h3>
+            <p>Experimental: every second of delay lowers the area.</p>
+            <div class="panel sed-panel"><div class="pen" data-figure="streaming" data-layout="thumb" data-scenario="delay" data-frame="6" data-metric="audr" data-label="AUDR" data-view="curve"></div></div>
+          </article>
+      </div>
+    </div>
+  </section>
+
+  <section class="section" id="formulas" aria-labelledby="formulas-h">
+    <div class="wrap">
+      <div class="grid grid--top">
+        <div class="span-6 sed-copy">
+          <h2 id="formulas-h">Metric formulas</h2>
+          <p>Red terms lower the score. Each metric page gives the full definition, and the PSDS formulas are checked against the library for every PSDS figure.</p>
+          <pre class="sed-code"><code><span class="c-k">from</span> sedmetrics <span class="c-k">import</span> SEDMetrics
+
+result = SEDMetrics.eval<span class="c-p">(</span>
+    references=<span class="c-p">[</span><span class="c-p">(</span><span class="c-n">0</span>, <span class="c-n">0</span>, <span class="c-n">0.0</span>, <span class="c-n">1.0</span><span class="c-p">)</span><span class="c-p">]</span>,
+    predictions=<span class="c-p">[</span><span class="c-p">(</span><span class="c-n">0</span>, <span class="c-n">0</span>, <span class="c-n">0.05</span>, <span class="c-n">1.0</span><span class="c-p">)</span><span class="c-p">]</span>,
+<span class="c-p">)</span>
+<span class="c-k">print</span><span class="c-p">(</span>result.f1, result.n_correct<span class="c-p">)</span></code></pre>
+          <p><a class="link" href="{{ 'metrics/psds/' | url }}">Read the PSDS definition</a></p>
+        </div>
+        <dl class="span-6 start-7 sed-formulas">
+          <div><dt>Event and segment F1</dt><dd class="arithmatex">\[F_1 = \frac{2\,TP}{2\,TP + \cost{FP + FN}}\]</dd></div>
+          <div><dt>Segment error rate</dt><dd class="arithmatex">\[ER = \frac{\cost{S + D + I}}{N_{\text{ref}}}\]</dd></div>
+          <div><dt>PSDS, per false-positive rate</dt><dd class="arithmatex">\[\tilde{r} = \max(0,\, \mu - \cost{\alpha_{\text{ST}}\,\sigma})\]</dd></div>
+          <div><dt>Area under deadline recall</dt><dd class="arithmatex">\[\frac{1}{N} \sum_{i=1}^{N} \max\Bigl(0,\, 1 - \cost{\frac{d_i}{H}}\Bigr)\]</dd></div>
+          <div><dt>Brier score, lower is better</dt><dd class="arithmatex">\[\frac{\sum_i w_i\,\cost{(p_i - y_i)^2}}{\sum_i w_i}\]</dd></div>
+        </dl>
+      </div>
+    </div>
+  </section>
+
+  <section class="section" id="questions" aria-labelledby="questions-h">
+    <div class="wrap">
+      <div class="grid grid--top">
+        <div class="span-6 sed-copy">
+          <h2 id="questions-h">Questions about scope</h2>
+          <p><a class="link" href="{{ 'choosing-metrics/' | url }}">Read the guide to choosing metrics</a></p>
+        </div>
+        <div class="faq span-6 start-7">
+          {% for item in page.meta.faq %}
+          <div class="faq__item"><h3>{{ item.q }}</h3><p>{{ item.a }}</p></div>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer class="footer closing footer--dark ground-inverse" id="contact" aria-labelledby="close-h">
+  <div class="wrap">
+    <div class="closing__cta close--type">
+      <div class="section-head">
+        <h2 id="close-h">Score your first detector</h2>
+        <p>Install the package, pass your events and read the counts behind every ratio.</p>
+      </div>
+      <a class="btn btn--primary btn--xl btn--wide" href="{{ 'getting-started/' | url }}">Get started</a>
+    </div>
+    <div class="closing__links">
+      <div class="grid">
+        <div class="span-4 stack-4">
+          <a class="nav__logo" href="#top"><span class="mark" data-mark="ring" aria-hidden="true"></span>SEDMetrics</a>
+          <p class="footer__lede">Sound event detection evaluation for Python and Rust.</p>
+        </div>
+        <div class="span-2 start-7 footer__col"><h4>Metrics</h4><ul>
+          <li><a href="{{ 'metrics/event_f1/' | url }}">Event F1</a></li>
+          <li><a href="{{ 'metrics/segment_f1/' | url }}">Segments</a></li>
+          <li><a href="{{ 'metrics/frame_binary/' | url }}">Frames</a></li>
+          <li><a href="{{ 'metrics/brier/' | url }}">Brier score</a></li>
+        </ul></div>
+        <div class="span-2 footer__col"><h4>Guides</h4><ul>
+          <li><a href="{{ 'penalties/' | url }}">Penalties</a></li>
+          <li><a href="{{ 'choosing-metrics/' | url }}">Choosing</a></li>
+          <li><a href="{{ 'adapters/' | url }}">Datasets</a></li>
+          <li><a href="{{ 'streaming-protocol/' | url }}">Streaming</a></li>
+        </ul></div>
+        <div class="span-2 footer__col"><h4>Reference</h4><ul>
+          <li><a href="{{ 'api/' | url }}">API</a></li>
+          <li><a href="{{ 'development/' | url }}">Development</a></li>
+          <li><a href="{{ config.repo_url }}">GitHub</a></li>
+        </ul></div>
+      </div>
+      <div class="footer__legal">
+        <span>&copy; 2026 The SEDMetrics authors. Apache-2.0.</span>
+      </div>
+    </div>
+  </div>
+</footer>
+
+<!-- the maths is typeset first: the kit's guard reads raw TeX brackets as unfilled placeholders -->
+<script defer src="{{ 'assets/vendor/katex/katex.min.js' | url }}"></script>
+<script defer src="{{ 'assets/vendor/katex/auto-render.min.js' | url }}"></script>
+<script defer src="{{ 'assets/javascripts/math.js' | url }}"></script>
+<script type="module" src="{{ 'assets/landing/kit/system.js' | url }}"></script>
+<script type="module" src="{{ 'assets/landing/kit/motion/motion.js' | url }}"></script>
+<script defer src="{{ 'assets/javascripts/penalty.js' | url }}"></script>
+</body>
+</html>

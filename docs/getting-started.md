@@ -1,8 +1,16 @@
 ---
-description: Install SEDMetrics and evaluate sound event predictions from Python or Rust.
+title: "Install and use SEDMetrics"
+description: "Install SEDMetrics with pip or from source, then score sound event predictions from Python or add the core crate to a Rust project."
+faq:
+  - q: "Which Python versions does SEDMetrics support?"
+    a: "CPython 3.10 to 3.13, with one wheel per platform."
+  - q: "Do I need a Rust compiler?"
+    a: "Only to build from source. A compatible wheel installs without one. Building needs Rust 1.85 or newer."
 ---
 
 # Getting started with SEDMetrics
+
+SEDMetrics is a Python and Rust library that scores sound event detection output. Install it, pass reference and predicted events to `SEDMetrics.eval`, and read the metric together with the counts behind it.
 
 SEDMetrics requires Python 3.10 or newer. Building from source requires Rust
 1.85 or newer and maturin. A Rust compiler is not needed when a compatible
