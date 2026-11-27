@@ -1,0 +1,88 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  rust:
+    name: rust (fmt, clippy, tests)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
+      - uses: Swatinem/rust-cache@v2
+      - name: Format
+        run: cargo fmt --all -- --check
+      - name: Clippy
+        run: cargo clippy --workspace --all-targets -- -D warnings
+      - name: Core tests
+        run: cargo test -p sedmetrics-core
+
+  python:
+    name: python ${{ matrix.python }} (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            python: "3.10"
+          - os: ubuntu-latest
+            python: "3.12"
+          - os: macos-14
+            python: "3.12"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python }}
+      - name: Install build and test dependencies
+        run: python -m pip install --upgrade pip maturin pytest pyarrow
+      - name: Build wheel
+        run: maturin build --release -o dist
+      - name: Install wheel
+        run: python -m pip install dist/*.whl
+      - name: Test
+        run: python -m pytest -q
+
+  parity:
+    name: parity (sed_eval, sed_scores_eval)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install oracle dependencies
+        run: >
+          python -m pip install --upgrade pip maturin pytest pyarrow
+          "sed_eval==0.2.1" "setuptools<81" "sed_scores_eval==0.0.4"
+          numpy "pandas<3"
+      - name: Build and install wheel
+        run: |
+          maturin build --release -o dist
+          python -m pip install dist/*.whl
+      - name: Reference parity (synthetic fixtures)
+        # SEDMETRICS_RAW_DATA is intentionally unset: the URBAN-SED and
+        # AudioSet samples are not in the repository, so the real-data parity
+        # tests skip and only the fixture-based comparisons run.
+        run: python -m pytest tests/parity -q

@@ -155,8 +155,30 @@ covered by the Python tests.
 - `docs/metrics/segment_f1.md` — segment-based metric and S/D/I decomposition.
 - `docs/metrics/psds.md` — PSDS definition, criteria, profiles and parity.
 - `docs/adapters.md` — dataset formats, id assignment, duration rules.
+- `docs/streaming-protocol.md` — decided streaming evaluation contract.
+- `docs/decisions/0001-baseline.md` — license, platforms, CI and metric order.
+
+## Supported platforms
+
+| Tier | Platforms | Status |
+| --- | --- | --- |
+| 1 | macOS arm64, Linux x86_64 | Built and tested |
+| 2 | Linux aarch64, Windows x86_64 | Expected to build, untested |
+| — | 32-bit targets, musl wheels | Not supported |
+
+CPython 3.10-3.13 via the `abi3-py310` stable ABI, so one wheel per platform
+works across those versions. Rust 1.85+ is required to build from source.
+
+CI (`.github/workflows/ci.yml`) runs the Rust checks, the Python suite on Linux
+and macOS, and the reference-parity suite on Linux. The GitHub Actions
+configuration has not yet been exercised on a runner.
 
 ## License
 
-Not yet decided. The license must be chosen by the maintainer before any
-release or redistribution.
+Licensed under the Apache License, Version 2.0 ([LICENSE-APACHE](LICENSE-APACHE)).
+Unless you explicitly state otherwise, any contribution intentionally submitted
+for inclusion in this project shall be licensed under the same terms, without
+additional conditions.
+
+The reference oracles used in tests (`sed_eval`, `sed_scores_eval`) are
+development-only dependencies and are not distributed with this project.

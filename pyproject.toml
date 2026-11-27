@@ -4,9 +4,13 @@ build-backend = "maturin"
 
 [project]
 name = "sedmetrics"
+# Platforms with tested wheels: macOS arm64 and Linux x86_64. Others are
+# best effort; see "Supported platforms" in README.md.
 description = "Evaluation metrics for Sound Event Detection"
 readme = "README.md"
 requires-python = ">=3.10"
+license = "Apache-2.0"
+license-files = ["LICENSE-APACHE"]
 dynamic = ["version"]
 keywords = ["sound event detection", "evaluation", "metrics", "audio", "dcase"]
 classifiers = [
