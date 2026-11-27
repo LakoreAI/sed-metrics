@@ -89,7 +89,7 @@ SEDMetrics has two interfaces over the same Rust core: a Python package,
 
     ```toml
     [dependencies]
-    sedmetrics-core = "0.1.0"
+    sedmetrics-core = "0.1.1"
     ```
 
     The crate has no third-party dependencies, does no file input or output and

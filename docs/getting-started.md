@@ -142,7 +142,7 @@ Add the Rust crate to `Cargo.toml`:
 
 ```toml
 [dependencies]
-sedmetrics-core = "0.1.0"
+sedmetrics-core = "0.1.1"
 ```
 
 The crate exposes typed events, configurations, results, and validation errors.
