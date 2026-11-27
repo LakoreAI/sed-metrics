@@ -1,0 +1,31 @@
+[build-system]
+requires = ["maturin>=1.16,<2.0"]
+build-backend = "maturin"
+
+[project]
+name = "sedmetrics"
+description = "Evaluation metrics for Sound Event Detection"
+readme = "README.md"
+requires-python = ">=3.10"
+dynamic = ["version"]
+keywords = ["sound event detection", "evaluation", "metrics", "audio", "dcase"]
+classifiers = [
+    "Programming Language :: Rust",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3 :: Only",
+    "Topic :: Multimedia :: Sound/Audio :: Analysis",
+    "Topic :: Scientific/Engineering",
+]
+
+[project.optional-dependencies]
+test = ["pytest>=8"]
+
+[tool.maturin]
+bindings = "pyo3"
+manifest-path = "crates/sedmetrics-python/Cargo.toml"
+python-source = "python"
+module-name = "sedmetrics._native"
+features = ["pyo3/extension-module"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
