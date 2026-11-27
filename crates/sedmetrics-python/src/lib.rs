@@ -918,7 +918,46 @@ fn _native(module: &Bound<'_, PyModule>) -> PyResult<()> {
     module.add_function(wrap_pyfunction!(segment_f1, module)?)?;
     module.add_function(wrap_pyfunction!(psds, module)?)?;
     module.add_function(wrap_pyfunction!(frame_binary, module)?)?;
+    module.add_function(wrap_pyfunction!(brier_score, module)?)?;
+    module.add_function(wrap_pyfunction!(frame_labels, module)?)?;
     Ok(())
+}
+
+#[pyfunction]
+fn frame_labels(
+    references: &Bound<'_, PyAny>,
+    recording_id: u32,
+    duration: f64,
+    class_id: u32,
+    boundaries: Vec<f64>,
+) -> PyResult<Vec<bool>> {
+    let events = extract_events(references, "references")?;
+    sedmetrics_core::labels_from_events(
+        &events,
+        Recording {
+            recording_id,
+            duration,
+        },
+        class_id,
+        &boundaries,
+    )
+    .map_err(ValidationError::new_err)
+}
+
+#[pyfunction]
+fn brier_score(
+    py: Python<'_>,
+    targets: Vec<f64>,
+    probabilities: Vec<f64>,
+    weights: Vec<f64>,
+) -> PyResult<Py<PyDict>> {
+    let result = sedmetrics_core::brier(&targets, &probabilities, &weights)
+        .map_err(ValidationError::new_err)?;
+    let out = PyDict::new(py);
+    out.set_item("brier", result.brier)?;
+    out.set_item("squared_error", result.squared_error)?;
+    out.set_item("weight", result.weight)?;
+    Ok(out.into())
 }
 
 #[pyfunction]

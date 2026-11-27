@@ -1,5 +1,46 @@
 //! Binary classification on an explicitly aligned frame grid.
 
+use crate::{
+    Event, Recording,
+    validation::{validate_events, validate_recordings},
+};
+
+/// Map reference events to a single recording/class grid using positive overlap.
+pub fn labels_from_events(
+    references: &[Event],
+    recording: Recording,
+    class_id: u32,
+    boundaries: &[f64],
+) -> Result<Vec<bool>, String> {
+    validate_recordings(&[recording]).map_err(|error| error.to_string())?;
+    validate_events(references, None).map_err(|error| error.to_string())?;
+    if boundaries.len() < 2
+        || boundaries[0] != 0.0
+        || boundaries[boundaries.len() - 1] != recording.duration
+        || boundaries
+            .windows(2)
+            .any(|p| !p[0].is_finite() || !p[1].is_finite() || p[0] >= p[1])
+    {
+        return Err("boundaries must strictly increase from zero to recording duration".into());
+    }
+    if references.iter().any(|event| {
+        event.recording_id == recording.recording_id && event.offset > recording.duration
+    }) {
+        return Err("reference event exceeds recording duration".into());
+    }
+    Ok(boundaries
+        .windows(2)
+        .map(|frame| {
+            references.iter().any(|event| {
+                event.recording_id == recording.recording_id
+                    && event.class_id == class_id
+                    && event.onset < frame[1]
+                    && frame[0] < event.offset
+            })
+        })
+        .collect())
+}
+
 /// Sufficient statistics and ranking metrics for one class.
 #[derive(Debug, Clone, PartialEq)]
 pub struct FrameResult {

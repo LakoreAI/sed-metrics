@@ -49,10 +49,49 @@ class SEDMetrics:
         a subset of precision, recall, f1, average_precision and auroc. Counts
         and configuration are always returned for auditing. ``boundaries`` and
         ``weighting`` are forwarded to :func:`sedmetrics.frame.evaluate`.
+
+        Frame mode also accepts event references with recording durations and a
+        score-track mapping, returning classwise, micro and macro results using
+        any positive overlap as the event-to-frame mapping. Probability mode
+        accepts aligned soft targets and probabilities and computes Brier score.
         """
-        if mode not in (None, "frame"):
-            raise ValueError("mode must be None or 'frame'")
+        if mode not in (None, "frame", "probability"):
+            raise ValueError("mode must be None, 'frame' or 'probability'")
+        if mode == "probability":
+            if isinstance(references, Dataset) or predictions is not None or recordings is not None:
+                raise ValueError("probability mode requires aligned targets and scores, not events or recordings")
+            if scores is None or isinstance(scores, (Mapping, str, bytes)):
+                raise ValueError("probability mode requires a sequence of probabilities")
+            if metric is not None or metric_options is not None:
+                raise ValueError("probability mode accepts metric selection through metrics only")
+            if metrics is not None and (isinstance(metrics, (str, bytes)) or not isinstance(metrics, Sequence) or list(metrics) != ["brier"]):
+                raise ValueError("probability mode currently supports metrics=['brier']")
+            return frame.brier(list(references), scores, **options)
         if mode == "frame":
+            if isinstance(scores, Mapping):
+                if predictions is not None or metric is not None or metric_options is not None:
+                    raise ValueError("event-based frame mode uses references and scores only")
+                if metrics is not None:
+                    raise ValueError("event-based frame mode returns all metrics")
+                if isinstance(references, Dataset):
+                    if recordings is not None:
+                        raise ValueError("recordings are already supplied by the Dataset")
+                    resolved = {}
+                    for recording, (boundaries, columns) in scores.items():
+                        rid = references.recording_id(recording)
+                        if rid in resolved:
+                            raise ValueError("duplicate recording after name resolution")
+                        cols = {}
+                        for klass, values in columns.items():
+                            cid = references.class_id(klass)
+                            if cid in cols:
+                                raise ValueError("duplicate class after name resolution")
+                            cols[cid] = values
+                        resolved[rid] = (boundaries, cols)
+                    return frame.events(references.references, resolved, recordings=references.durations, **options)
+                if recordings is None:
+                    raise ValueError("event-based frame mode requires recordings")
+                return frame.events(references, scores, recordings=recordings, **options)
             if isinstance(references, Dataset):
                 raise ValueError("frame mode requires aligned Boolean labels, not a Dataset")
             if predictions is not None or recordings is not None:

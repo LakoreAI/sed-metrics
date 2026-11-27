@@ -21,10 +21,11 @@ This is an early bootstrap. The implemented and planned features are listed belo
 | Dataset adapters: URBAN-SED v2.0.0 (dir or `.tar.gz`), AudioSet strong parquet | Implemented — `pyarrow` optional, AudioSet only |
 | Reference parity | Tested for selected fixtures against `sed_eval` 0.2.1 (event, segment) and `sed_scores_eval` 0.0.4 (PSDS), including per-class PSDS curves |
 | JSON evaluation report + `sedmetrics evaluate` CLI | Implemented |
-| Binary frame precision/recall/F1, AP and AUROC | Implemented for one pre-aligned class, with frame or duration weighting |
+| Frame precision/recall/F1, AP and AUROC | Implemented for aligned labels or event-to-frame mapping, with classwise, micro and macro results for event tracks |
 | piPSDS / post-processing-independent evaluation | Not implemented |
 | Streaming / online metrics (deadline recall, AUDR, false alerts per hour) | Not implemented, protocol provisional |
-| Diagnostics, post-processing, soft-label metrics | Not implemented |
+| Soft-label Brier score | Implemented for aligned single-class targets and probabilities |
+| Diagnostics and post-processing | Not implemented |
 
 Correctness caveats that apply right now:
 
@@ -165,11 +166,27 @@ result = SEDMetrics.eval(
 print(result["f1"], result["average_precision"], result["auroc"])
 ```
 
-Frame mode returns all supported frame metrics for one class with labels already aligned to the score grid. It does
-not infer labels from event intervals or aggregate classes; see
+The example uses pre-aligned labels for one class; see
 `docs/metrics/frame_binary.md` for the contract.
 Pass `metrics=["f1", "auroc"]` to select frame metrics; counts and configuration
 are always included.
+
+To map events to score frames and compute classwise, micro and macro metrics:
+
+```python
+result = SEDMetrics.eval(
+    references=[(0, 0, 0.9, 1.0)], mode="frame", recordings={0: 2.0},
+    scores={0: ([0.0, 1.0, 2.0], {0: [0.8, 0.2], 1: [0.1, 0.7]})},
+    threshold=0.5,
+)
+print(result["micro"]["f1"], result["classes"][0]["f1"])
+```
+
+A frame is positive when it has any positive-duration overlap with a reference
+of the same class; see `docs/metrics/frame_events.md` for the full contract.
+For aligned soft targets and probabilities, use
+`SEDMetrics.eval([0.2, 0.8], mode="probability", scores=[0.2, 0.5])` to
+compute Brier score; its interpretation is in `docs/metrics/brier.md`.
 
 ## Development
 

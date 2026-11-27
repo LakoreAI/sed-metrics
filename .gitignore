@@ -1,5 +1,6 @@
 /target
 /dist
+/checkpoints/
 /.venv
 /.venv-oracle
 __pycache__/
