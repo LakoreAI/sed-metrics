@@ -17,6 +17,8 @@ else in the roadmap is planned.
 | Area | Status |
 | --- | --- |
 | Collar-based event precision / recall / F1 (micro, macro, per class, with counts and mean localization error) | Implemented — Rust core + Python bindings |
+| Dataset adapters: URBAN-SED v2.0.0 (dir or `.tar.gz`), AudioSet strong parquet | Implemented — `pyarrow` optional, AudioSet only |
+| Parity with `sed_eval` 0.2.1 event-based metrics | Passing on fixtures and sampled URBAN-SED / AudioSet data |
 | Frame metrics, segment metrics, PSDS / intersection metrics, threshold sweeps | Not implemented |
 | Streaming / online metrics (deadline recall, AUDR, false alerts per hour) | Not implemented, protocol provisional |
 | Diagnostics, post-processing, soft-label metrics | Not implemented |
@@ -24,11 +26,14 @@ else in the roadmap is planned.
 
 Correctness caveats that apply right now:
 
-- Parity against `sed_eval`, `psds_eval`, `sed_scores_eval` and scikit-learn has
-  **not** been run. The event F1 implementation is currently validated by
-  hand-computed fixtures, edge-case tests and a brute-force matching oracle.
-- The Python API is a single function; there is no batch API, no
-  `Evaluator` class, no adapter for DCASE TSV files and no CLI.
+- Event F1 parity is verified against `sed_eval` 0.2.1 only. Parity against
+  `psds_eval`, `sed_scores_eval` and scikit-learn is not applicable yet because
+  those metric families are not implemented.
+- Parity runs use synthetic predictions derived from references, on 120
+  URBAN-SED test clips and 60 AudioSet strong clips. They are not a benchmark
+  of any system.
+- The Python API is a single metric plus dataset loaders; there is no batch API,
+  no `Evaluator` class, no DCASE TSV adapter and no CLI.
 - No license has been chosen yet; do not redistribute until the maintainer
   settles it.
 
@@ -40,6 +45,7 @@ Requires Rust 1.85+ and Python 3.10+.
 python -m venv .venv && source .venv/bin/activate
 pip install maturin
 maturin develop --release
+pip install "sedmetrics[data]"    # optional: pyarrow, for AudioSet parquet
 ```
 
 ## Usage
@@ -65,6 +71,19 @@ Each event is `(recording_id, class_id, onset, offset)` in seconds, a mapping
 with those keys, or an object exposing them as attributes. Intervals are
 half-open, `[onset, offset)`. Undefined ratios are `None`, never `NaN`.
 
+Evaluating on a dataset, using class and recording names instead of ids:
+
+```python
+dataset = sm.adapters.load_urban_sed("data/raw/URBAN-SED_v2.0.0.tar.gz", split="test")
+
+result = dataset.event_f1(
+    [("soundscape_test_1", "siren", 1.05, 2.45)],
+    average="macro",
+)
+```
+
+See `docs/adapters.md` for dataset layouts, id assignment and duration rules.
+
 ## Development
 
 ```bash
@@ -72,7 +91,10 @@ cargo fmt --all -- --check
 cargo clippy -p sedmetrics-core --all-targets -- -D warnings
 cargo test -p sedmetrics-core          # pure Rust, no Python needed
 maturin develop --release
-python -m pytest                       # Python integration tests
+python -m pytest                       # unit, integration, parity
+
+pip install "sedmetrics[parity]"       # sed_eval 0.2.1 oracle for parity tests
+SEDMETRICS_RAW_DATA=/path/to/data/raw python -m pytest tests/parity
 ```
 
 `sedmetrics-python` is built with the `pyo3/extension-module` feature by
@@ -83,7 +105,8 @@ covered by the Python tests.
 
 - `docs/metrics/event_f1.md` — specification of the implemented metric
   (definition, matching policy, aggregation, undefined values, defaults,
-  hand-computed example, limitations).
+  hand-computed example, parity evidence, limitations).
+- `docs/adapters.md` — dataset formats, id assignment, duration rules.
 
 ## License
 

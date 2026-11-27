@@ -113,6 +113,11 @@ practice. Micro averaging is the `sed_eval`-style overall result (pooled
 counts). Neither value is universal: other challenges use different collars and
 macro averaging, so callers should pass the profile they intend to reproduce.
 
+`sed_eval` 0.2.1 exposes the same rule as `t_collar` plus
+`percentage_of_length`, but its `percentage_of_length` default is **0.5**, not
+0.2. Reproducing this profile in `sed_eval` requires passing
+`t_collar=0.2, percentage_of_length=0.2` explicitly.
+
 `evaluate_offset=False` implements an onset-only protocol and must be labelled
 as such in reports.
 
@@ -132,9 +137,27 @@ macro recall are both `0.55` and their harmonic mean is `0.55`.
 
 ## 7. Related implementations, verification and complexity
 
-- References: `sed_eval` event-based metrics (pinned version pending),
-  Mesaros et al. 2016. Parity tests are **not yet implemented** or run; the
-  current evidence is hand-computed fixtures plus a brute-force
+- References: `sed_eval` 0.2.1 event-based metrics with
+  `event_matching_type="optimal"` (Hopcroft–Karp maximum-cardinality matching),
+  Mesaros et al. 2016.
+- Parity: `tests/parity/test_event_f1_sed_eval.py` compares counts and
+  P/R/F1 against `sed_eval` with the same `t_collar` and
+  `percentage_of_length`. Cases: hand fixtures, exact collar boundaries, an
+  onset-only protocol, seeded random perturbations, 120 URBAN-SED test clips
+  (638 events, 10 classes) and 60 AudioSet strong clips (625 events, 86
+  classes). Counts agree exactly; ratios agree to `1e-12`. The parity
+  dependency is a test-only extra, never a runtime dependency.
+- One intentional reporting difference: `sed_eval` counts leftover
+  reference/system pairs that satisfy the collars but disagree on class as
+  **substitutions** (`Nsubs`) and subtracts them from its `Nfp`/`Nfn`. This
+  implementation follows the classification convention
+  `FP = n_predicted - TP`, `FN = n_reference - TP`, so its insertion and
+  deletion counts equal `sed_eval`'s `Nfp + Nsubs` and `Nfn + Nsubs`.
+  Substitution counts are not reported yet.
+- Empty-system behaviour also differs by design: with no predictions,
+  `sed_eval` reports `NaN` F1 and precision; this implementation reports
+  precision `None` and `F1 = 0` (see §4).
+- Additional local evidence: hand-computed fixtures and a brute-force
   maximum-matching oracle over deterministic pseudo-random small cases.
 - Numerical tolerance: fixtures compare with `1e-12` absolute tolerance on
   ratios derived from exact integer counts.
@@ -147,6 +170,9 @@ macro recall are both `0.55` and their harmonic mean is `0.55`.
 
 - Maximum-cardinality matching does not minimise localization error, and no
   per-class onset/offset-constrained matching is offered.
+- No substitution (`Nsubs`) statistic and no error rate; insertion/deletion
+  counts follow the FP/FN convention described in §7, which differs from
+  `sed_eval`'s event-based reporting.
 - Only one matching policy is implemented; intersection-based metrics (PSDS)
   will need a different one and must not reuse this matcher.
 - No evaluation of `evaluate_offset=False` against a reference implementation.

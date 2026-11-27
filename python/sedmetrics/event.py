@@ -89,5 +89,5 @@ def f1(
         offset_ratio=offset_ratio,
         evaluate_offset=evaluate_offset,
         average=average,
-        recordings=recordings,
+        recordings=None if recordings is None else dict(recordings),
     )

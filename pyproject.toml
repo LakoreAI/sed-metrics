@@ -19,6 +19,10 @@ classifiers = [
 
 [project.optional-dependencies]
 test = ["pytest>=8"]
+# Reference oracles for parity tests. Never runtime dependencies of the core.
+parity = ["sed_eval==0.2.1", "setuptools<81"]
+# Dataset adapters for AudioSet strong parquet.
+data = ["pyarrow>=15"]
 
 [tool.maturin]
 bindings = "pyo3"
