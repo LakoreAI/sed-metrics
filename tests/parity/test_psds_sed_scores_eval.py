@@ -148,6 +148,28 @@ def test_psds1_profile_on_synthetic_scores() -> None:
     assert_psds_parity(reference, ours)
 
 
+@pytest.mark.parametrize("cross_triggers", [False, True])
+def test_pipsds_processed_scores_against_reference(cross_triggers) -> None:
+    refs = [(0, 0, 1., 2.), (0, 1, 2., 3.)]
+    durations = {0: 4.}
+    first = {0: ([0., 1., 2., 3., 4.], {0: [0.1, 0.9, 0.1, 0.8], 1: [0.1, 0.2, 0.9, 0.1]})}
+    second = {0: ([0., 1., 2., 3., 4.], {0: [0.1, 0.9, 0.1, 0.1], 1: [0.1, 0.8, 0.9, 0.1]})}
+    ref_first, gt, dur = sed_inputs(refs, first, durations)
+    ref_second, _, _ = sed_inputs(refs, second, durations)
+    cross = {"alpha_ct": 0.5, "cttc_threshold": 0.3} if cross_triggers else {"alpha_ct": 0.0}
+    reference = sed_scores_eval.postprocessing_independent_psds(
+        scores=None, ground_truth=gt, audio_durations=dur, postprocessing_functions=None,
+        scores_processed=[ref_first, ref_second], dtc_threshold=0.5, gtc_threshold=0.5,
+        alpha_st=0.5, unit_of_time="second", max_efpr=1.0, num_jobs=2, **cross,
+    )
+    ours = sm.psds.pipsds(refs, {"a": first, "b": second}, recordings=durations,
+                           dtc_threshold=0.5, gtc_threshold=0.5, alpha_st=0.5,
+                           unit="second", max_efpr=1.0, **cross)
+    assert ours.psds == pytest.approx(float(reference[0]), abs=1e-9)
+    for cls in ours.classes:
+        assert cls.psds == pytest.approx(float(reference[1][f"c{cls.class_id}"]), abs=1e-9)
+
+
 def test_psds_with_cross_triggers() -> None:
     references, scores, durations, _ = build_case(7)
     reference, ours = run_both(

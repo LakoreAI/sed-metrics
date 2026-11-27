@@ -22,8 +22,8 @@ This is an early bootstrap. The implemented and planned features are listed belo
 | Reference parity | Tested for selected fixtures against `sed_eval` 0.2.1 (event, segment) and `sed_scores_eval` 0.0.4 (PSDS), including per-class PSDS curves |
 | JSON evaluation report + `sedmetrics evaluate` CLI | Implemented |
 | Frame precision/recall/F1, AP and AUROC | Implemented for aligned labels or event-to-frame mapping, with classwise, micro and macro results for event tracks |
-| piPSDS / post-processing-independent evaluation | Not implemented |
-| Streaming / online metrics (deadline recall, AUDR, false alerts per hour) | Not implemented, protocol provisional |
+| piPSDS | Implemented for explicitly supplied post-processed score tracks; reference parity tested on a fixture |
+| Streaming / online metrics | Experimental CREATE-only fixed assignment, deadline recall, AUDR and false alerts per hour |
 | Soft-label Brier score | Implemented for aligned single-class targets and probabilities |
 | Diagnostics and post-processing | Not implemented |
 
@@ -187,6 +187,29 @@ of the same class; see `docs/metrics/frame_events.md` for the full contract.
 For aligned soft targets and probabilities, use
 `SEDMetrics.eval([0.2, 0.8], mode="probability", scores=[0.2, 0.5])` to
 compute Brier score; its interpretation is in `docs/metrics/brier.md`.
+
+For piPSDS, pass `metric="pipsds"` and a mapping from processing names to
+complete score-track mappings via `scores`. The envelope can choose a different
+processing at different operating points and is not a single deployed policy;
+see `docs/metrics/pipsds.md`.
+
+The experimental streaming baseline accepts immutable CREATE alerts with
+explicit decision and audio availability times:
+
+```python
+result = SEDMetrics.eval(
+    references=[(0, 0, 0.0, 0.5)], mode="streaming", recordings={0: 10.0},
+    alerts=[(0, 1, 0, 0.1, 0.1, 0.1)],
+    class_ids=[0], matching_window=1.0, deadlines=[0.25, 0.5], horizon=1.0, clock="simulated",
+)
+print(result["deadline_recall"], result["audr"], result["false_alerts_per_hour"])
+```
+
+The tuple is recording ID, alert ID, class ID, emitted time, audio available
+until, and latest audio used (or `None`). The current protocol requires complete
+recording observation, scores CREATE actions only, and treats references near
+the end as censored. See `docs/streaming-protocol.md` for the matching policy,
+clock assumptions, and limitations.
 
 ## Development
 

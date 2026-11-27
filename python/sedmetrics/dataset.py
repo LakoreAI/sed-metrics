@@ -205,6 +205,17 @@ class Dataset:
             **kwargs,
         )
 
+    def pipsds(self, processed_scores: Mapping[str, Mapping[Any, Any]], **kwargs: Any):
+        """Evaluate an envelope over named processed score-track sets."""
+        from ._native import merge_psds
+        from .psds import PiPsdsResult
+
+        if not processed_scores:
+            raise ValueError("at least one post-processing is required")
+        if any(not isinstance(name, str) or not name for name in processed_scores):
+            raise ValueError("post-processing names must be nonempty strings")
+        return PiPsdsResult(merge_psds([self.psds(scores, **kwargs) for scores in processed_scores.values()]), tuple(processed_scores))
+
     def segment_f1(self, predictions: Iterable[Any], **kwargs: Any):
         """Segment-based metrics of ``predictions`` against this dataset.
 

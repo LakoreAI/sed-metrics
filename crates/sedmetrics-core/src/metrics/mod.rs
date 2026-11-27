@@ -5,3 +5,4 @@ pub mod frame;
 pub mod probability;
 pub mod psds;
 pub mod segment;
+pub mod streaming;

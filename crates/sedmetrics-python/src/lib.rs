@@ -920,7 +920,118 @@ fn _native(module: &Bound<'_, PyModule>) -> PyResult<()> {
     module.add_function(wrap_pyfunction!(frame_binary, module)?)?;
     module.add_function(wrap_pyfunction!(brier_score, module)?)?;
     module.add_function(wrap_pyfunction!(frame_labels, module)?)?;
+    module.add_function(wrap_pyfunction!(merge_psds, module)?)?;
+    module.add_function(wrap_pyfunction!(streaming_create, module)?)?;
     Ok(())
+}
+
+type CreateAlertInput = (u32, u64, u32, f64, f64, Option<f64>);
+
+#[pyfunction]
+#[allow(clippy::too_many_arguments)]
+fn streaming_create(
+    py: Python<'_>,
+    references: &Bound<'_, PyAny>,
+    alerts: Vec<CreateAlertInput>,
+    recordings: HashMap<u32, f64>,
+    class_ids: Vec<u32>,
+    window: f64,
+    deadlines: Vec<f64>,
+    horizon: f64,
+) -> PyResult<Py<PyDict>> {
+    let references = extract_events(references, "references")?;
+    let recordings = extract_recordings(Some(recordings)).expect("recordings supplied");
+    let alerts: Vec<sedmetrics_core::CreateAlert> = alerts
+        .into_iter()
+        .map(
+            |(
+                recording_id,
+                alert_id,
+                class_id,
+                emitted_at,
+                audio_available_until,
+                latest_audio_used,
+            )| sedmetrics_core::CreateAlert {
+                recording_id,
+                alert_id,
+                class_id,
+                emitted_at,
+                audio_available_until,
+                latest_audio_used,
+            },
+        )
+        .collect();
+    let result = sedmetrics_core::evaluate_streaming(
+        &references,
+        &alerts,
+        &recordings,
+        &class_ids,
+        window,
+        &deadlines,
+        horizon,
+    )
+    .map_err(ValidationError::new_err)?;
+    let out = PyDict::new(py);
+    out.set_item("n_reference", result.n_reference)?;
+    out.set_item("n_observed", result.n_observed)?;
+    out.set_item("n_censored", result.n_censored)?;
+    out.set_item("n_matched", result.n_matched)?;
+    out.set_item("n_censored_matched", result.n_censored_matched)?;
+    out.set_item("n_false_alerts", result.n_false_alerts)?;
+    out.set_item("exposure_seconds", result.exposure_seconds)?;
+    out.set_item("deadline_recall", result.deadline_recall)?;
+    out.set_item("audr", result.audr)?;
+    out.set_item("false_alerts_per_hour", result.false_alerts_per_hour)?;
+    out.set_item("delays", result.delays)?;
+    out.set_item("matches", result.matches)?;
+    Ok(out.into())
+}
+
+#[pyfunction]
+fn merge_psds(results: Vec<PyRef<'_, PsdsResultPy>>) -> PyResult<PsdsResultPy> {
+    let values: Vec<sedmetrics_core::PsdsResult> = results
+        .iter()
+        .map(|r| sedmetrics_core::PsdsResult {
+            psds: r.psds,
+            dataset_duration: r.dataset_duration,
+            efpr: r.efpr.clone(),
+            tpr: r.tpr.clone(),
+            config: r.config,
+            classes: r
+                .classes
+                .iter()
+                .map(|c| sedmetrics_core::ClassPsds {
+                    class_id: c.class_id,
+                    n_reference: c.n_reference,
+                    reference_duration: c.reference_duration,
+                    psds: c.psds,
+                    efpr: c.efpr.clone(),
+                    tpr: c.tpr.clone(),
+                })
+                .collect(),
+        })
+        .collect();
+    let result =
+        sedmetrics_core::merge_postprocessings(&values).map_err(ValidationError::new_err)?;
+    Ok(PsdsResultPy {
+        psds: result.psds,
+        dataset_duration: result.dataset_duration,
+        efpr: result.efpr,
+        tpr: result.tpr,
+        config: result.config,
+        classes: result
+            .classes
+            .into_iter()
+            .map(|c| ClassPsdsPy {
+                class_id: c.class_id,
+                n_reference: c.n_reference,
+                reference_duration: c.reference_duration,
+                psds: c.psds,
+                efpr: c.efpr,
+                tpr: c.tpr,
+            })
+            .collect(),
+    })
 }
 
 #[pyfunction]

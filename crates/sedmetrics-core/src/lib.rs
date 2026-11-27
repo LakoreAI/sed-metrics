@@ -15,7 +15,10 @@ pub use matching::{CollarConfig, is_eligible, maximum_matching};
 pub use metrics::event::{Averaging, ClassEventF1, EventF1Config, EventF1Result, event_f1};
 pub use metrics::frame::{FrameResult, frame_metrics, labels_from_events};
 pub use metrics::probability::{BrierResult, brier};
-pub use metrics::psds::{ClassPsds, PsdsConfig, PsdsResult, ScoreTrack, TimeUnit, psds};
+pub use metrics::psds::{
+    ClassPsds, PsdsConfig, PsdsResult, ScoreTrack, TimeUnit, merge_postprocessings, psds,
+};
 pub use metrics::segment::{ClassSegmentMetrics, SegmentConfig, SegmentResult, segment_metrics};
+pub use metrics::streaming::{CreateAlert, StreamingResult, evaluate_streaming};
 pub use types::{Event, PredictedEvent, Recording};
 pub use validation::ValidationError;

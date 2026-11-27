@@ -6,14 +6,67 @@ See ``docs/metrics/psds.md`` for the specification.
 from __future__ import annotations
 
 from collections.abc import Iterable, Mapping, Sequence
+from dataclasses import dataclass
 from typing import Any
 
-from ._native import ClassPsds, PsdsResult, psds as _psds
+from ._native import ClassPsds, PsdsResult, merge_psds as _merge_psds, psds as _psds
 
-__all__ = ["ClassPsds", "PsdsResult", "psds"]
+__all__ = ["ClassPsds", "PsdsResult", "PiPsdsResult", "psds", "pipsds"]
 
 ScoreSeries = Mapping[Any, Sequence[float]]
 """``{class: per-frame scores}`` for one recording."""
+
+
+@dataclass(frozen=True)
+class PiPsdsResult:
+    """Envelope result and the names of the supplied post-processings."""
+    result: PsdsResult
+    postprocessings: tuple[str, ...]
+
+    @property
+    def psds(self) -> float:
+        return self.result.psds
+
+    @property
+    def classes(self):
+        return self.result.classes
+
+    @property
+    def efpr(self) -> list[float]:
+        return self.result.efpr
+
+    @property
+    def tpr(self) -> list[float]:
+        return self.result.tpr
+
+    @property
+    def config(self) -> dict[str, Any]:
+        return self.result.config
+
+    @property
+    def dataset_duration(self) -> float:
+        return self.result.dataset_duration
+
+    def to_dict(self) -> dict[str, Any]:
+        return {**self.result.to_dict(), "postprocessings": list(self.postprocessings), "specification": "pipsds/1"}
+
+
+def pipsds(references: Iterable[Any], processed_scores: Mapping[str, Mapping[Any, Any]], *, recordings: Mapping[Any, float], **kwargs: Any) -> PiPsdsResult:
+    """Evaluate an envelope over explicitly supplied post-processed score tracks.
+
+    Every named configuration must cover the same recordings and classes. The
+    per-class upper envelope can select different configurations at different
+    false-positive rates; it does not represent a single deployed policy. The
+    caller is responsible for recording how each score track was produced and
+    whether its processing is causal.
+    """
+    if not processed_scores:
+        raise ValueError("at least one post-processing is required")
+    if any(not isinstance(name, str) or not name for name in processed_scores):
+        raise ValueError("post-processing names must be nonempty strings")
+    refs = list(references)
+    results = [psds(refs, scores, recordings=recordings, **kwargs) for scores in processed_scores.values()]
+    return PiPsdsResult(_merge_psds(results), tuple(processed_scores))
 
 
 def psds(

@@ -1,13 +1,18 @@
-# Streaming evaluation protocol (decided baseline)
+# Streaming evaluation protocol (experimental CREATE baseline)
 
-Status: **provisional, implementation not started.** The metric family is
-still provisional in the sense that independent validation has not been done; the
-rules below are the contract any implementation and any report must follow.
+Status: **experimental implementation, version `streaming_create/1`**.
+This is a research protocol and has not been independently validated on real
+detector traces. Only immutable CREATE records are accepted; lifecycle-aware
+evaluation is not implemented.
 
 Motivation: every metric `M(G, P)` that depends only on references `G` and final
 predictions `P` assigns the same value to two systems with identical `P` but
 different emission histories. Streaming metrics exist to measure *when* a
 decision became available, not to replace offline localization metrics.
+Prior early-detection work such as [SEED](https://arxiv.org/abs/2202.02441)
+reports detection delay and F1 under its own eligibility and early-prediction
+rules. The protocol here makes different choices, including no pre-onset credit;
+it is not claimed to reproduce SEED or establish novelty.
 
 ## 1. Entities and clocks
 
@@ -22,14 +27,18 @@ decision became available, not to replace offline localization metrics.
 - Simulated algorithmic availability is allowed for replay studies, but must be
   labelled as simulated. Measured latency may not be claimed from simulated
   timestamps.
-- Validation: causal (`latest_audio_used <= audio_available_until`), monotone
-  `emitted_at` per recording, consistent recording/class identity, legal action
-  transitions, unique `(alert_id, sequence_id)`.
+- Validation: `latest_audio_used <= audio_available_until <= emitted_at`,
+  monotone `emitted_at` per recording, unique `(recording_id, alert_id)`, and
+  all times inside the recording. This CREATE-only API does not accept or
+  validate lifecycle records or sequence ids. A clock label is required but
+  self-reported timestamps do not prove causality.
+- An explicit nonempty class vocabulary is required; unknown reference and alert
+  classes are rejected, including in recordings without reference events.
 
 ## 2. What is scored
 
-- **Immutable CREATE alerts only.** `Update`, `Cancel` and `Close` are validated
-  for legality and kept for auditing, but contribute no credit.
+- **Immutable CREATE alerts only.** `Update`, `Cancel` and `Close` are not
+  accepted or scored; retaining and validating lifecycle logs is future work.
 - Every CREATE alert is matched at most once and every reference event at most
   once.
 - Unmatched CREATE alerts, including duplicates of an already matched alert, are
@@ -63,7 +72,8 @@ Assignment per `(recording, class)` group:
 2. Choose a **maximum-cardinality** matching.
 3. Among maximum-cardinality matchings, minimise the **total delay**
    `Σ (emitted_at - g_on)`.
-4. Break remaining ties deterministically by reference index, then alert index.
+4. Resolve remaining ties deterministically by stable input order and dynamic
+   programming traversal. This is not a guarantee of lexicographically minimal pairs.
 
 Report the policy with every result. This assignment is fixed before deadline
 curves are computed, so `DAR(t)` is monotone in `t` and `AUDR` is monotone in
@@ -90,17 +100,17 @@ logs.
 
 ## 5. Censoring and observation
 
-- The observation end for a recording is `min(last audio available, window end)`.
+- Observation covers the entire supplied recording duration, with no tail and no
+  early termination in this version. The caller must ensure this is true.
 - A reference whose eligibility window is not fully observed (it extends past the
   observation end) is **censored**: it is excluded from the fully observed
   cohort, counted separately, and never counted as a confirmed miss.
-- The interaction between censored references and matching is unresolved:
-  excluding them before assignment can count an alert attributable to a censored
-  event as false, while matching them first can consume an alert eligible for an
-  observed event. Neither alternative is adopted until a policy and adversarial
-  fixtures are specified. Exposure under early observation termination likewise
-  needs an explicit definition. Do not implement or claim this baseline fixed
-  until these choices are resolved.
+- Matching includes all references, including censored references, before the
+  observed cohort is selected. A censored reference can consume an alert that
+  could match an observed reference; this is a deliberate limitation of this
+  fixed global assignment. Matched censored alerts are not false alerts, and
+  censored references contribute neither credit nor misses to cohort recall.
+  Both their count and their matched count are reported.
 - A reference with a fully observed window and no matched alert is a miss.
 - Observation ends at the clip boundary; no tail time is added.
 
@@ -116,12 +126,13 @@ class-wise. Zero exposure makes `FA/h` undefined (`None`), never zero.
 
 ## 7. Consequences for the implementation
 
-- The alert log is a Rust domain type validated before evaluation; malformed
-  logs raise, they are never repaired.
-- The matcher needs a maximum-cardinality + minimum-total-delay assignment over
-  a bipartite graph whose edges are sparse (one window per reference), so a
-  min-cost max-flow formulation is acceptable; the deterministic tie-break must
-  be part of the test fixtures.
+- The CREATE log is validated before evaluation; malformed inputs raise.
+- The matcher uses a dynamic program per recording and class. With a common
+  fixed window, if two eligible pairs cross in onset/emission order, swapping
+  their alerts preserves eligibility, cardinality and total delay. Thus an
+  optimal non-crossing matching exists. Each group uses O(R × A) time and memory;
+  ties follow stable traversal order. This argument depends on the common window
+  and would not automatically hold for event-specific windows.
 - Everything except the alert log is deterministic: no wall clock, no random
   sampling, no thread-order dependence.
 - Every result carries the protocol version, the configuration and the cohort

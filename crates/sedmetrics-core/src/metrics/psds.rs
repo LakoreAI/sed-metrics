@@ -356,6 +356,80 @@ fn step_value(efpr: &[f64], tpr: &[f64], x: f64) -> f64 {
     }
 }
 
+/// Combine classwise PSDS envelopes from the same evaluation over different
+/// post-processings. Inputs must come from the same references and recordings.
+pub fn merge_postprocessings(results: &[PsdsResult]) -> Result<PsdsResult, &'static str> {
+    let first = results
+        .first()
+        .ok_or("at least one post-processing is required")?;
+    if results.iter().any(|r| {
+        r.config != first.config
+            || r.dataset_duration != first.dataset_duration
+            || r.classes.len() != first.classes.len()
+            || r.classes.iter().zip(&first.classes).any(|(a, b)| {
+                a.class_id != b.class_id
+                    || a.n_reference != b.n_reference
+                    || a.reference_duration != b.reference_duration
+            })
+    }) {
+        return Err("post-processing results have incompatible configurations or class supports");
+    }
+    let mut classes = Vec::with_capacity(first.classes.len());
+    for (index, source) in first.classes.iter().enumerate() {
+        let mut grid: Vec<f64> = results
+            .iter()
+            .flat_map(|r| r.classes[index].efpr.iter().copied())
+            .collect();
+        grid.sort_by(f64::total_cmp);
+        grid.dedup();
+        let tpr: Vec<f64> = grid
+            .iter()
+            .map(|&x| {
+                results
+                    .iter()
+                    .map(|r| step_value(&r.classes[index].efpr, &r.classes[index].tpr, x))
+                    .fold(0.0, f64::max)
+            })
+            .collect();
+        classes.push(ClassPsds {
+            class_id: source.class_id,
+            n_reference: source.n_reference,
+            reference_duration: source.reference_duration,
+            psds: staircase_auc(&tpr, &grid, first.config.max_efpr),
+            efpr: grid,
+            tpr,
+        });
+    }
+    let mut grid: Vec<f64> = classes
+        .iter()
+        .flat_map(|c| c.efpr.iter().copied())
+        .collect();
+    grid.sort_by(f64::total_cmp);
+    grid.dedup();
+    let mut tpr = Vec::with_capacity(grid.len() + 1);
+    for &x in &grid {
+        let values: Vec<f64> = classes
+            .iter()
+            .map(|c| step_value(&c.efpr, &c.tpr, x))
+            .collect();
+        let mean = values.iter().sum::<f64>() / values.len() as f64;
+        let variance = values.iter().map(|v| (v - mean).powi(2)).sum::<f64>() / values.len() as f64;
+        tpr.push((mean - first.config.alpha_st * variance.sqrt()).max(0.0));
+    }
+    if let Some(last) = tpr.last().copied() {
+        grid.push(first.config.max_efpr);
+        tpr.push(last);
+    }
+    Ok(PsdsResult {
+        psds: staircase_auc(&tpr, &grid, first.config.max_efpr),
+        efpr: grid,
+        tpr,
+        classes,
+        dataset_duration: first.dataset_duration,
+        config: first.config,
+    })
+}
+
 /// Turn per-threshold deltas into the operating-point series of one class.
 fn accumulate_operating_points(
     mut deltas: Vec<(f64, Stats)>,

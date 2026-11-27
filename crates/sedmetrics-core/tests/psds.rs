@@ -65,6 +65,35 @@ fn hand_computed_psds() {
 }
 
 #[test]
+fn postprocessing_envelope_contains_individual_curves() {
+    let references = [reference(0, 0, 1.0, 2.0)];
+    let recordings = [Recording {
+        recording_id: 0,
+        duration: 4.0,
+    }];
+    let first = [track(
+        0,
+        vec![0],
+        vec![0.0, 1.0, 2.0, 3.0, 4.0],
+        vec![0.1, 0.9, 0.1, 0.9],
+    )];
+    let second = [track(
+        0,
+        vec![0],
+        vec![0.0, 1.0, 2.0, 3.0, 4.0],
+        vec![0.1, 0.9, 0.1, 0.1],
+    )];
+    let a = psds(&references, &first, &recordings, &config()).unwrap();
+    let b = psds(&references, &second, &recordings, &config()).unwrap();
+    let merged = sedmetrics_core::merge_postprocessings(&[a.clone(), b.clone()]).unwrap();
+    assert_eq!(merged.psds, 1.0);
+    assert!(merged.psds >= a.psds && merged.psds >= b.psds);
+    let mut incompatible = b;
+    incompatible.config.max_efpr = 2.0;
+    assert!(sedmetrics_core::merge_postprocessings(&[a, incompatible]).is_err());
+}
+
+#[test]
 fn no_detection_at_all_has_zero_psds() {
     let references = [reference(0, 0, 1.0, 1.5)];
     // Scores below every reference region and above nothing: the only points
