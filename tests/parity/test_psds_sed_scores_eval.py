@@ -188,6 +188,45 @@ def test_psds_with_cross_triggers() -> None:
     assert_psds_parity(reference, ours)
 
 
+def merge_connected(references):
+    """Join overlapping or touching events of one class in one recording."""
+    merged = []
+    for recording_id, class_id, onset, offset in sorted(references):
+        previous = merged[-1] if merged else None
+        if previous and previous[:2] == [recording_id, class_id] and onset <= previous[3]:
+            previous[3] = max(previous[3], offset)
+        else:
+            merged.append([recording_id, class_id, onset, offset])
+    return [tuple(event) for event in merged]
+
+
+@pytest.mark.parametrize("cross_triggers", [False, True])
+def test_overlapping_references_match_the_merged_reference(cross_triggers) -> None:
+    references, scores, durations, _ = build_case(5)
+    # Add a repeat, an overlapping, a nested and a touching event to every one.
+    connected = list(references)
+    for recording_id, class_id, onset, offset in references:
+        connected += [
+            (recording_id, class_id, onset, offset),
+            (recording_id, class_id, onset + 0.5, offset + 0.75),
+            (recording_id, class_id, onset + 0.25, onset + 1.0),
+            (recording_id, class_id, offset + 0.75, offset + 1.25),
+        ]
+    merged = merge_connected(connected)
+    assert len(merged) == len(references)
+    cross = {"alpha_ct": 0.5, "cttc_threshold": 0.3} if cross_triggers else {"alpha_ct": 0.0}
+    config = dict(dtc_threshold=0.3, gtc_threshold=0.3, alpha_st=1.0,
+                  unit="second", max_efpr=0.5, **cross)
+
+    # sed_scores_eval refuses connected events, so it gets the merged list.
+    reference, _ = run_both(merged, scores, durations, **config)
+    ours = sm.psds.psds(connected, scores, recordings=durations, **config)
+
+    assert ours.psds > 0.0
+    assert_psds_parity(reference, ours)
+    assert sum(item.n_reference for item in ours.classes) == len(merged)
+
+
 def test_psds_without_standard_deviation_penalty() -> None:
     references, scores, durations, _ = build_case(11)
     reference, ours = run_both(

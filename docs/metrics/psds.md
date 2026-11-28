@@ -107,6 +107,8 @@ Inputs:
 
 - References: events `(recording_id, class_id, onset, offset)` in seconds,
   half-open, positive length, inside their recording.
+  [Overlapping and touching references](#overlapping-and-touching-references) of
+  one class are merged.
 - Score tracks: per recording, a strictly increasing boundary vector of length
   `T + 1` and a `T × C` score matrix named by class id. Frame `i` covers
   `[boundaries[i], boundaries[i+1])`. Scores must be finite; `NaN` and `-inf`
@@ -119,6 +121,24 @@ Inputs:
   complete tracks. No implicit values are inserted.
 - The scored classes and the referenced classes must be the same set, and
   every scored class needs at least one reference event.
+
+### Overlapping and touching references
+
+Within a recording, references of one class that overlap or touch are merged
+into one event before anything is counted. The criteria sum intersections over
+references, so shared time would otherwise count twice. The reference count
+$N_c$ (`n_reference`), the total reference duration $L_k$
+(`reference_duration`) and every criterion describe the merged events.
+`sed_scores_eval` rejects such input and asks for the same merge.
+
+!!! warning "Changed after 0.1.1"
+
+    Release 0.1.1 did not merge. A detection covering 40% of itself failed the
+    PSDS1 detection criterion against one reference and passed it when that
+    reference was listed twice. Rescore results computed from references with
+    overlapping or touching events of one class.
+
+Event, segment and frame metrics are not changed by this rule.
 
 ## 2. Definition
 

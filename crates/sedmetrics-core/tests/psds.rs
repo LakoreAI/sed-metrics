@@ -262,3 +262,87 @@ fn psds_is_bounded_and_monotone_in_the_scores() {
     assert_eq!(result.psds, 1.0);
     assert!(result.psds <= 1.0);
 }
+
+#[test]
+fn a_repeated_reference_does_not_count_twice() {
+    // The detection covers 4 of its 10 seconds: below a DTC of 0.7.
+    let tracks = [track(0, vec![0], vec![0.0, 10.0], vec![0.9])];
+    let recordings = [Recording {
+        recording_id: 0,
+        duration: 10.0,
+    }];
+    let strict = PsdsConfig {
+        dtc_threshold: 0.7,
+        gtc_threshold: 0.7,
+        ..config()
+    };
+    let once = [reference(0, 0, 0.0, 4.0)];
+    let twice = [reference(0, 0, 0.0, 4.0), reference(0, 0, 0.0, 4.0)];
+
+    let single = psds(&once, &tracks, &recordings, &strict).expect("valid");
+    let repeated = psds(&twice, &tracks, &recordings, &strict).expect("valid");
+
+    assert_eq!(single.psds, 0.0);
+    assert_eq!(repeated, single);
+}
+
+#[test]
+fn overlapping_and_touching_references_are_merged() {
+    let tracks = [
+        track(
+            0,
+            vec![0, 1],
+            vec![0.0, 4.0, 10.0],
+            vec![0.9, 0.2, 0.1, 0.8],
+        ),
+        track(
+            1,
+            vec![0, 1],
+            vec![0.0, 4.0, 10.0],
+            vec![0.7, 0.1, 0.3, 0.6],
+        ),
+    ];
+    let recordings = [
+        Recording {
+            recording_id: 0,
+            duration: 10.0,
+        },
+        Recording {
+            recording_id: 1,
+            duration: 10.0,
+        },
+    ];
+    // Unsorted; nested, overlapping and touching events in recording 0. The
+    // class 0 event of recording 1 stays separate: merging is per recording.
+    let raw = [
+        reference(0, 0, 3.0, 4.0),
+        reference(0, 0, 0.0, 2.0),
+        reference(0, 0, 1.0, 3.0),
+        reference(0, 0, 1.5, 1.8),
+        reference(0, 0, 5.0, 6.0),
+        reference(1, 0, 0.0, 4.0),
+        reference(0, 1, 4.0, 7.0),
+        reference(0, 1, 6.0, 10.0),
+    ];
+    let merged = [
+        reference(0, 0, 0.0, 4.0),
+        reference(0, 0, 5.0, 6.0),
+        reference(1, 0, 0.0, 4.0),
+        reference(0, 1, 4.0, 10.0),
+    ];
+    let cross = PsdsConfig {
+        dtc_threshold: 0.1,
+        gtc_threshold: 0.1,
+        cttc_threshold: Some(0.3),
+        alpha_ct: 0.5,
+        ..config()
+    };
+
+    let from_raw = psds(&raw, &tracks, &recordings, &cross).expect("valid");
+    let from_merged = psds(&merged, &tracks, &recordings, &cross).expect("valid");
+
+    assert_eq!(from_raw, from_merged);
+    assert_eq!(from_raw.classes[0].n_reference, 3);
+    assert_eq!(from_raw.classes[0].reference_duration, 9.0);
+    assert_eq!(from_raw.classes[1].n_reference, 1);
+}

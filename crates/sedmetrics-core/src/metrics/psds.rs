@@ -7,6 +7,9 @@
 //! of its intersections with same-class references covers a fraction of its own
 //! length; a reference is a true positive when relevant detections cover a
 //! fraction of its length. There is no one-to-one assignment anywhere.
+//!
+//! References of one class that overlap or touch within a recording are merged
+//! first, so that no stretch of time is counted twice.
 
 use std::collections::{BTreeMap, BTreeSet};
 
@@ -161,7 +164,8 @@ impl ScoreTrack {
 pub struct ClassPsds {
     /// Class identifier.
     pub class_id: u32,
-    /// Reference events for the class.
+    /// Reference events for the class, after overlapping and touching events
+    /// of one recording have been merged.
     pub n_reference: u64,
     /// Total reference duration in seconds (the cross-trigger denominator).
     pub reference_duration: f64,
@@ -222,6 +226,21 @@ impl Stats {
             *left += right;
         }
     }
+}
+
+/// Sort intervals and join those that overlap or touch.
+///
+/// The criteria sum intersections over references, so the references of one
+/// class must be disjoint. This is also the input `sed_scores_eval` requires.
+fn merge_connected(intervals: &mut Vec<(f64, f64)>) {
+    intervals.sort_by(|left, right| left.0.total_cmp(&right.0).then(left.1.total_cmp(&right.1)));
+    intervals.dedup_by(|next, kept| {
+        let connected = next.0 <= kept.1;
+        if connected {
+            kept.1 = kept.1.max(next.1);
+        }
+        connected
+    });
 }
 
 fn round_to(value: f64, decimals: u32) -> f64 {
@@ -587,8 +606,14 @@ pub fn psds(
             .entry(event.recording_id)
             .or_insert_with(|| vec![Vec::new(); classes.len()])[index]
             .push((event.onset, event.offset));
-        reference_count[index] += 1;
-        reference_duration[index] += event.offset - event.onset;
+    }
+    // Counts and durations describe the merged references.
+    for per_class in references_by_recording.values_mut() {
+        for (index, intervals) in per_class.iter_mut().enumerate() {
+            merge_connected(intervals);
+            reference_count[index] += intervals.len() as u64;
+            reference_duration[index] += intervals.iter().map(|(on, off)| off - on).sum::<f64>();
+        }
     }
 
     let dataset_duration: f64 = recordings.iter().map(|recording| recording.duration).sum();
