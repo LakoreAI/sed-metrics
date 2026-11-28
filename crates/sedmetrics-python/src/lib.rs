@@ -13,7 +13,7 @@ use pyo3::types::{PyDict, PyList};
 
 type ScoreTrackInput = (u32, Vec<u32>, Vec<f64>, Vec<f64>);
 
-use sedmetrics_core::{
+use sedmetrics::{
     Averaging, ClassEventF1, ClassSegmentMetrics, CollarConfig, Event, EventF1Config,
     EventF1Result, PsdsConfig, Recording, ScoreTrack, SegmentConfig, SegmentResult, TimeUnit,
     ValidationError as CoreValidationError,
@@ -591,7 +591,7 @@ fn segment_f1(
     };
 
     let result =
-        sedmetrics_core::segment_metrics(&references, &predictions, &config, recordings.as_deref())
+        sedmetrics::segment_metrics(&references, &predictions, &config, recordings.as_deref())
             .map_err(to_py_err)?;
 
     Ok(convert_segment_result(result))
@@ -809,8 +809,7 @@ fn psds(
         unit: parse_time_unit(unit)?,
     };
 
-    let result =
-        sedmetrics_core::psds(&references, &tracks, &recordings, &config).map_err(to_py_err)?;
+    let result = sedmetrics::psds(&references, &tracks, &recordings, &config).map_err(to_py_err)?;
 
     Ok(PsdsResultPy {
         psds: result.psds,
@@ -898,9 +897,8 @@ fn event_f1(
         average: parse_average(average)?,
     };
 
-    let result =
-        sedmetrics_core::event_f1(&references, &predictions, &config, durations.as_deref())
-            .map_err(to_py_err)?;
+    let result = sedmetrics::event_f1(&references, &predictions, &config, durations.as_deref())
+        .map_err(to_py_err)?;
 
     Ok(convert_result(result))
 }
@@ -941,7 +939,7 @@ fn streaming_create(
 ) -> PyResult<Py<PyDict>> {
     let references = extract_events(references, "references")?;
     let recordings = extract_recordings(Some(recordings)).expect("recordings supplied");
-    let alerts: Vec<sedmetrics_core::CreateAlert> = alerts
+    let alerts: Vec<sedmetrics::CreateAlert> = alerts
         .into_iter()
         .map(
             |(
@@ -951,7 +949,7 @@ fn streaming_create(
                 emitted_at,
                 audio_available_until,
                 latest_audio_used,
-            )| sedmetrics_core::CreateAlert {
+            )| sedmetrics::CreateAlert {
                 recording_id,
                 alert_id,
                 class_id,
@@ -961,7 +959,7 @@ fn streaming_create(
             },
         )
         .collect();
-    let result = sedmetrics_core::evaluate_streaming(
+    let result = sedmetrics::evaluate_streaming(
         &references,
         &alerts,
         &recordings,
@@ -989,9 +987,9 @@ fn streaming_create(
 
 #[pyfunction]
 fn merge_psds(results: Vec<PyRef<'_, PsdsResultPy>>) -> PyResult<PsdsResultPy> {
-    let values: Vec<sedmetrics_core::PsdsResult> = results
+    let values: Vec<sedmetrics::PsdsResult> = results
         .iter()
-        .map(|r| sedmetrics_core::PsdsResult {
+        .map(|r| sedmetrics::PsdsResult {
             psds: r.psds,
             dataset_duration: r.dataset_duration,
             efpr: r.efpr.clone(),
@@ -1000,7 +998,7 @@ fn merge_psds(results: Vec<PyRef<'_, PsdsResultPy>>) -> PyResult<PsdsResultPy> {
             classes: r
                 .classes
                 .iter()
-                .map(|c| sedmetrics_core::ClassPsds {
+                .map(|c| sedmetrics::ClassPsds {
                     class_id: c.class_id,
                     n_reference: c.n_reference,
                     reference_duration: c.reference_duration,
@@ -1011,8 +1009,7 @@ fn merge_psds(results: Vec<PyRef<'_, PsdsResultPy>>) -> PyResult<PsdsResultPy> {
                 .collect(),
         })
         .collect();
-    let result =
-        sedmetrics_core::merge_postprocessings(&values).map_err(ValidationError::new_err)?;
+    let result = sedmetrics::merge_postprocessings(&values).map_err(ValidationError::new_err)?;
     Ok(PsdsResultPy {
         psds: result.psds,
         dataset_duration: result.dataset_duration,
@@ -1043,7 +1040,7 @@ fn frame_labels(
     boundaries: Vec<f64>,
 ) -> PyResult<Vec<bool>> {
     let events = extract_events(references, "references")?;
-    sedmetrics_core::labels_from_events(
+    sedmetrics::labels_from_events(
         &events,
         Recording {
             recording_id,
@@ -1062,8 +1059,8 @@ fn brier_score(
     probabilities: Vec<f64>,
     weights: Vec<f64>,
 ) -> PyResult<Py<PyDict>> {
-    let result = sedmetrics_core::brier(&targets, &probabilities, &weights)
-        .map_err(ValidationError::new_err)?;
+    let result =
+        sedmetrics::brier(&targets, &probabilities, &weights).map_err(ValidationError::new_err)?;
     let out = PyDict::new(py);
     out.set_item("brier", result.brier)?;
     out.set_item("squared_error", result.squared_error)?;
@@ -1079,7 +1076,7 @@ fn frame_binary(
     weights: Vec<f64>,
     threshold: f64,
 ) -> PyResult<Py<PyDict>> {
-    let result = sedmetrics_core::frame_metrics(&labels, &scores, &weights, threshold)
+    let result = sedmetrics::frame_metrics(&labels, &scores, &weights, threshold)
         .map_err(ValidationError::new_err)?;
     let out = PyDict::new(py);
     out.set_item("tp", result.tp)?;

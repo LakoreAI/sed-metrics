@@ -1,5 +1,5 @@
 [package]
-name = "sedmetrics-core"
+name = "sedmetrics"
 description = "Rust computational core for SEDMetrics (Sound Event Detection evaluation)"
 version.workspace = true
 edition.workspace = true

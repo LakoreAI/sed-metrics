@@ -95,7 +95,7 @@ or detect sounds, and it has no diagnostics or post-processing tools yet.
 
 ```toml
 [dependencies]
-sedmetrics-core = "0.1.2"
+sedmetrics = "0.1.2"
 ```
 
 The crate has typed events, configurations, results and validation errors. It

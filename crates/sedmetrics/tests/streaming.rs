@@ -1,4 +1,4 @@
-use sedmetrics_core::{CreateAlert, Event, Recording, evaluate_streaming};
+use sedmetrics::{CreateAlert, Event, Recording, evaluate_streaming};
 
 #[test]
 fn deadline_and_censoring_fixture() {

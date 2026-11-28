@@ -1,12 +1,12 @@
 ---
 title: "SEDMetrics Python and Rust API"
-description: "Reference for SEDMetrics.eval, the lower-level Python functions and the sedmetrics-core Rust crate for sound event evaluation."
+description: "Reference for SEDMetrics.eval, the lower-level Python functions and the sedmetrics Rust crate for sound event evaluation."
 ---
 
 # SEDMetrics API reference
 
-SEDMetrics has two interfaces over the same Rust core: a Python package,
-`sedmetrics`, and a Rust crate, `sedmetrics-core`. Choose your language.
+SEDMetrics has two interfaces over the same Rust core: a Python package and a
+Rust crate, both named `sedmetrics`. Choose your language.
 
 === ":logos-python: Python"
 
@@ -89,7 +89,7 @@ SEDMetrics has two interfaces over the same Rust core: a Python package,
 
     ```toml
     [dependencies]
-    sedmetrics-core = "0.1.2"
+    sedmetrics = "0.1.2"
     ```
 
     The crate has no third-party dependencies, does no file input or output and
@@ -98,7 +98,7 @@ SEDMetrics has two interfaces over the same Rust core: a Python package,
     ## Rust example
 
     ```rust
-    use sedmetrics_core::{
+    use sedmetrics::{
         Event, EventF1Config, PsdsConfig, Recording, ScoreTrack, ValidationError, event_f1, psds,
     };
 

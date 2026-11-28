@@ -20,7 +20,7 @@ maturin develop --release
 ```bash
 cargo fmt --all -- --check
 cargo clippy --workspace --all-targets -- -D warnings
-cargo test -p sedmetrics-core
+cargo test -p sedmetrics
 python -m pytest
 ```
 
@@ -78,5 +78,5 @@ about.
 ## Packaging
 
 Build the Python wheel with `maturin build --release`. The Python binding crate
-is not published as a Rust library; `sedmetrics-core` is the intended Rust
+is not published as a Rust library; `sedmetrics` is the intended Rust
 distribution.

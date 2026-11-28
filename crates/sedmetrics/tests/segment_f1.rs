@@ -1,6 +1,4 @@
-use sedmetrics_core::{
-    Averaging, Event, Recording, SegmentConfig, ValidationError, segment_metrics,
-};
+use sedmetrics::{Averaging, Event, Recording, SegmentConfig, ValidationError, segment_metrics};
 
 fn event(recording_id: u32, class_id: u32, onset: f64, offset: f64) -> Event {
     Event {

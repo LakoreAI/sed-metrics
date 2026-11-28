@@ -1,5 +1,5 @@
-use sedmetrics_core::matching::{CollarConfig, maximum_matching};
-use sedmetrics_core::{
+use sedmetrics::matching::{CollarConfig, maximum_matching};
+use sedmetrics::{
     Averaging, Event, EventF1Config, EventF1Result, Recording, ValidationError, event_f1,
 };
 
@@ -376,7 +376,7 @@ fn brute_force_cardinality(
         );
         for prediction_index in 0..predictions.len() {
             if used[prediction_index]
-                || !sedmetrics_core::is_eligible(
+                || !sedmetrics::is_eligible(
                     &references[reference_index],
                     &predictions[prediction_index],
                     config,

@@ -1,4 +1,4 @@
-use sedmetrics_core::brier;
+use sedmetrics::brier;
 
 #[test]
 fn brier_hand_example_and_invalid_inputs() {

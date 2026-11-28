@@ -1,4 +1,4 @@
-use sedmetrics_core::frame_metrics;
+use sedmetrics::frame_metrics;
 
 #[test]
 fn hand_calculation_and_ties() {

@@ -31,7 +31,7 @@ jobs:
       - name: Clippy
         run: cargo clippy --workspace --all-targets -- -D warnings
       - name: Core tests
-        run: cargo test -p sedmetrics-core
+        run: cargo test -p sedmetrics
 
   python:
     name: python ${{ matrix.python }} (${{ matrix.os }})

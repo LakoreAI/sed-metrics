@@ -1,4 +1,4 @@
-use sedmetrics_core::{Event, PsdsConfig, Recording, ScoreTrack, TimeUnit, ValidationError, psds};
+use sedmetrics::{Event, PsdsConfig, Recording, ScoreTrack, TimeUnit, ValidationError, psds};
 
 fn reference(recording_id: u32, class_id: u32, onset: f64, offset: f64) -> Event {
     Event {
@@ -85,12 +85,12 @@ fn postprocessing_envelope_contains_individual_curves() {
     )];
     let a = psds(&references, &first, &recordings, &config()).unwrap();
     let b = psds(&references, &second, &recordings, &config()).unwrap();
-    let merged = sedmetrics_core::merge_postprocessings(&[a.clone(), b.clone()]).unwrap();
+    let merged = sedmetrics::merge_postprocessings(&[a.clone(), b.clone()]).unwrap();
     assert_eq!(merged.psds, 1.0);
     assert!(merged.psds >= a.psds && merged.psds >= b.psds);
     let mut incompatible = b;
     incompatible.config.max_efpr = 2.0;
-    assert!(sedmetrics_core::merge_postprocessings(&[a, incompatible]).is_err());
+    assert!(sedmetrics::merge_postprocessings(&[a, incompatible]).is_err());
 }
 
 #[test]
