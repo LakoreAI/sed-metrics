@@ -103,11 +103,11 @@ dependencies = [
 
 [[package]]
 name = "sedmetrics-core"
-version = "0.1.1"
+version = "0.1.2"
 
 [[package]]
 name = "sedmetrics-python"
-version = "0.1.1"
+version = "0.1.2"
 dependencies = [
  "pyo3",
  "sedmetrics-core",

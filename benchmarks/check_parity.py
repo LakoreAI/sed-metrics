@@ -2,7 +2,7 @@
 # /// script
 # requires-python = "==3.12.*"
 # dependencies = [
-#   "sedmetrics==0.1.1",
+#   "sedmetrics==0.1.2",
 #   "sed_eval==0.2.1",
 #   "sed_scores_eval==0.0.4",
 #   "scikit-learn==1.7.2",

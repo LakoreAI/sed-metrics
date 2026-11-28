@@ -131,7 +131,7 @@ $N_c$ (`n_reference`), the total reference duration $L_k$
 (`reference_duration`) and every criterion describe the merged events.
 `sed_scores_eval` rejects such input and asks for the same merge.
 
-!!! warning "Changed after 0.1.1"
+!!! warning "Changed in 0.1.2"
 
     Release 0.1.1 did not merge. A detection covering 40% of itself failed the
     PSDS1 detection criterion against one reference and passed it when that

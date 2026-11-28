@@ -2,7 +2,7 @@
 # /// script
 # requires-python = "==3.12.*"
 # dependencies = [
-#   "sedmetrics==0.1.1",
+#   "sedmetrics==0.1.2",
 #   "torch==2.7.1",
 #   "torchaudio==2.7.1",
 #   "torchvision==0.22.1",

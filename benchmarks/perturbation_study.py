@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # /// script
 # requires-python = ">=3.10"
-# dependencies = ["sedmetrics==0.1.1", "numpy<2", "scipy"]
+# dependencies = ["sedmetrics==0.1.2", "numpy<2", "scipy"]
 # ///
 """How each metric reacts to one controlled error, on real annotations.
 
