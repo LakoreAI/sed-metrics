@@ -4,6 +4,9 @@ hooks:
   - tools/mkdocs_hooks.py
 site_url: https://lakoreai.github.io/sed-metrics/
 site_author: The SEDMetrics authors
+# Locally written papers (ignored by git) are not part of the site.
+exclude_docs: |
+  /papers/
 copyright: "&copy; 2026 The SEDMetrics authors. Apache-2.0."
 repo_url: https://github.com/LakoreAI/sed-metrics
 repo_name: LakoreAI/sed-metrics
