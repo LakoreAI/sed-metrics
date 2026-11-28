@@ -67,7 +67,7 @@ python tools/docs_figures.py --check  # verify they still match
 `tests/integration/test_docs_figures.py` runs the same check.
 
 Build the site with `mkdocs build --strict`, or preview it with `mkdocs serve`,
-after installing `mkdocs-material==9.7.7`. The visual rules are in `DESIGN.md`.
+after installing `mkdocs-material==9.7.7`.
 
 `tools/mkdocs_hooks.py` runs during the build. It writes each figure's numbers
 into the page as tables, renders the `faq` list in a page's front matter with its

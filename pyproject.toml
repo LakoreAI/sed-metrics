@@ -10,7 +10,7 @@ description = "Evaluation metrics for Sound Event Detection"
 readme = "README.md"
 requires-python = ">=3.10"
 license = "Apache-2.0"
-license-files = ["LICENSE-APACHE"]
+license-files = ["LICENSE"]
 dynamic = ["version"]
 keywords = ["sound event detection", "evaluation", "metrics", "audio", "dcase"]
 classifiers = [

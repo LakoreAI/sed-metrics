@@ -22,7 +22,7 @@ choices so that implementations, reports and releases do not re-litigate them.
 
 Reversible by the maintainer, but applied here so the repository is usable.
 
-- The canonical `LICENSE-APACHE` (sha256 `cfc7749b…523d30`) is at the
+- The canonical `LICENSE` (sha256 `cfc7749b…523d30`) is at the
   repository root; `Cargo.toml` and `pyproject.toml` carry `Apache-2.0`.
 - Rationale: an explicit patent grant, a single unambiguous license, and no
   per-user choice to explain in downstream distributions. No third-party code

@@ -95,7 +95,7 @@ or detect sounds, and it has no diagnostics or post-processing tools yet.
 
 ```toml
 [dependencies]
-sedmetrics-core = "0.1.1"
+sedmetrics-core = "0.1.2"
 ```
 
 The crate has typed events, configurations, results and validation errors. It
@@ -128,13 +128,12 @@ stable ABI.
 ## Contributing
 
 [Development and validation](https://lakoreai.github.io/sed-metrics/development/)
-covers the checks, the parity suite and the documentation build. The visual rules
-for the site are in [DESIGN.md](https://github.com/LakoreAI/sed-metrics/blob/main/DESIGN.md).
+covers the checks, the parity suite and the documentation build.
 
 ## License
 
 Licensed under the Apache License, Version 2.0
-([LICENSE-APACHE](https://github.com/LakoreAI/sed-metrics/blob/main/LICENSE-APACHE)).
+([LICENSE](https://github.com/LakoreAI/sed-metrics/blob/main/LICENSE)).
 Unless you explicitly state otherwise, any contribution intentionally submitted
 for inclusion in this project shall be licensed under the same terms, without
 additional conditions.
